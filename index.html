@@ -283,14 +283,13 @@
         
         <div class="admin-panel" id="adminPanel">
             <div style="background: #f1f3f5; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
-                <span style="font-weight: 700; display: block; margin-bottom: 6px; color: #495057;">🔗 GitHub 自動同步設定（資料安全儲存在本瀏覽器中）</span>
+                <span style="font-weight: 700; display: block; margin-bottom: 6px; color: #495057;">🔗 GitHub 自動同步設定（首次使用請填寫，資料僅保存在此電腦中）</span>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <input type="text" id="ghUser" placeholder="GitHub 帳號名稱" style="width: 150px;">
                     <input type="text" id="ghRepo" placeholder="Repo 專案名稱" style="width: 150px;">
                     <input type="password" id="ghToken" placeholder="GitHub PAT Token 金鑰 (ghp_...)" style="flex: 1; min-width: 200px;">
                     <button onclick="saveGitHubSettings()" class="mac-btn btn-gray" style="background: #228be6; color: #fff;">儲存設定</button>
                 </div>
-                <small style="color: #86868b; display: block; margin-top: 5px;">⚠️ 請務必在此處完成設定，客人在下單時系統才能自動連動 GitHub 將其即時下架！</small>
             </div>
 
             <div class="admin-panel-flex">
@@ -345,41 +344,40 @@
 
             <div class="modal-footer">
                 <button class="mac-btn btn-gray" style="width: auto;" onclick="closeCartModal()">繼續瀏覽</button>
-                <button class="mac-btn btn-green" style="width: auto;" id="btnCheckout" onclick="checkoutAndGenerateOrder()">✅ 送出訂單並下載抓貨單</button>
+                <button class="mac-btn btn-green" id="btnCheckout" onclick="checkoutAndGenerateOrder()">✅ 送出訂單並下載抓貨單</button>
             </div>
         </div>
     </div>
 
     <script>
-    // ==========================================
-    // ⚠️ 核心商品資料（更新時會自動重寫此處，並推送到 GitHub） ⚠️
-    // ==========================================
+    // ==================================================================
+    // 🔗 您的 GAS 免費雲端庫存 API 網址
+    // ==================================================================
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyX3aFoGrUB6_BVjCcL7BBtcpio-dPaZqsu21vffkh0k8BEQStKsu-0f5iGwFosjqwKOw/exec";
+
     let filteredProducts = []; 
-    // ==========================================
-
-    // ==================================================================
-    // 🔗 Google 表單對接設定
-    // ==================================================================
-    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
-    const FIELD_STORE = "entry.622983435";       // 指定取貨門市
-    const FIELD_ITEMS = "entry.732769472";       // 購買商品明細
-    const FIELD_PRICE = "entry.570634756";       // 總金額
-    const FIELD_DATE = "entry.112740061";        // 下單時間
-    // ==================================================================
-
     let cart = [];
 
     window.onload = function() {
         loadGitHubSettings();
-        cleanSoldProducts();
-        renderProducts(filteredProducts);
-        updateFilters();
+        // 初始化時直接向 Google 試算表抓取實時最新的在架商品
+        fetchProductsFromCloud();
     };
 
-    function cleanSoldProducts() {
-        const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
-        if (soldImeis.length > 0) {
-            filteredProducts = filteredProducts.filter(p => !soldImeis.includes(p.imei));
+    // 🔄 向 GAS 請求讀取最新的未售出商品
+    async function fetchProductsFromCloud() {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">⏳ 正在連線 Google 試算表資料庫，讀取最新庫存...</p>';
+        
+        try {
+            const response = await fetch(`${GAS_API_URL}?action=getProducts`);
+            filteredProducts = await response.json();
+            
+            renderProducts(filteredProducts);
+            updateFilters();
+        } catch (error) {
+            console.error("無法載入雲端庫存：", error);
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red; padding: 30px;">❌ 無法連線雲端資料庫。請確認網路連線，或檢查 GAS 部署權限設定！</p>';
         }
     }
 
@@ -414,7 +412,7 @@
         document.getElementById('ghToken').value = localStorage.getItem('gh_token') || '';
     }
 
-    // 1. 讀取並篩選 Excel 檔案
+    // 1. 讀取並篩選 Excel 檔案並上傳（此功能保留供管理端整批重新匯入用）
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
         if (!fileInput.files[0]) { alert('請先選擇庫存 Excel 檔案！'); return; }
@@ -471,13 +469,15 @@
             updateFilters();
 
             // 觸發 GitHub 自動推送
-            pushNewDataToGitHub(user, repo, token, filteredProducts);
+            pushNewDataToGitHub(user, repo, token);
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // 🚀【核心同步函數】更新 GitHub 上的庫存
-    async function pushNewDataToGitHub(user, repo, token, latestProducts) {
+    async function pushNewDataToGitHub(user, repo, token) {
+        const btn = document.getElementById('btnImportAndUpload');
+        btn.innerText = "⏳ 正在與 GitHub 連線同步...";
+
         try {
             const filePath = "index.html"; 
             const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/${filePath}`;
@@ -485,14 +485,14 @@
             const getRes = await fetch(apiUrl, {
                 headers: { "Authorization": `token ${token}` }
             });
-            if (!getRes.ok) throw new Error("讀取 GitHub 檔案失敗！");
+            if (!getRes.ok) throw new Error("讀取 GitHub 檔案失敗，請檢查設定！");
             
             const fileData = await getRes.json();
             const currentSha = fileData.sha;
             const currentHtml = decodeURIComponent(escape(atob(fileData.content)));
 
             const targetRegex = /let filteredProducts = \[\s*[\s\S]*?\];/;
-            const newCode = `let filteredProducts = ${JSON.stringify(latestProducts, null, 4)};`;
+            const newCode = `let filteredProducts = ${JSON.stringify(filteredProducts, null, 4)};`;
             const updatedHtml = currentHtml.replace(targetRegex, newCode);
 
             const encodedContent = btoa(unescape(encodeURIComponent(updatedHtml)));
@@ -504,17 +504,21 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    message: `🔄 庫存實時同步更新 (剩餘 ${latestProducts.length} 筆商品)`,
+                    message: `🔄 實時庫存自動上架 (共 ${filteredProducts.length} 筆商品)`,
                     content: encodedContent,
                     sha: currentSha
                 })
             });
 
-            if (!putRes.ok) throw new Error("寫入 GitHub 失敗！");
-            return true;
+            if (!putRes.ok) throw new Error("向 GitHub 寫入更新失敗！");
+
+            alert(`🎉 實時同步成功！\n全新庫存（共 ${filteredProducts.length} 筆商品）已自動推送上架至您的 GitHub！\n請稍等 10～30 秒讓 GitHub Pages 完成部署，前台即會看見最新商品。`);
         } catch (error) {
             console.error(error);
-            return false;
+            alert(`❌ 同步到 GitHub 時發生錯誤：\n${error.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "📥 1鍵匯入並上架到 GitHub";
         }
     }
 
@@ -524,7 +528,7 @@
         grid.innerHTML = '';
         
         if (list.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前架上無商品。請由上方管理員後台匯入 Excel 庫存上架！</p>';
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前架上無「D級出清品」商品。請由上方商家驗證匯入 Excel 庫存上架！</p>';
             document.getElementById('totalOnSale').innerText = '0';
             return;
         }
@@ -657,7 +661,7 @@
         document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
     }
 
-    // 6. 結帳與【實時雲端扣庫存】
+    // 6. 🟢 雲端同步結帳扣庫存 + 自動下載抓貨單
     async function checkoutAndGenerateOrder() {
         if (cart.length === 0) { alert('購物車內沒有商品，無法送出訂單！'); return; }
         
@@ -666,113 +670,83 @@
 
         const btnCheckout = document.getElementById('btnCheckout');
         btnCheckout.disabled = true;
-        btnCheckout.innerText = "⏳ 正在與雲端同步並確認庫存...";
+        btnCheckout.innerText = "⏳ 正在連線雲端確認庫存...";
 
         const orderDate = new Date().toLocaleString('zh-TW');
         let totalPrice = 0;
-        const checkoutImeis = [];
-        let itemsSummaryArray = [];
+        const checkoutItems = [];
 
         cart.forEach(item => {
             totalPrice += item.price;
-            checkoutImeis.push(item.imei);
-            
-            itemsSummaryArray.push(
-                `【${item.subCategory}】${item.brand} ${item.model} | ` +
-                `換購: ${item.tradeInModel} | ` +
-                `說明: ${item.note} | ` +
-                `回收商: ${item.vendor} | ` +
-                `IMEI: ${item.imei} | ` +
-                `原始IMEI: ${item.originalImei} | ` +
-                `等級: ${item.level} | ` +
-                `金額: $${item.price}`
-            );
+            checkoutItems.push({
+                rowIndex: item.rowIndex, // 試算表資料行數
+                imei: item.imei
+            });
         });
 
-        const itemsSummaryString = itemsSummaryArray.join("\n"); 
+        try {
+            // 🔄 將訂單資訊傳送到您的 GAS API，實行雲端安全鎖定庫存
+            const response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' }, // 避免觸發預檢跨域問題
+                body: JSON.stringify({
+                    action: "checkout",
+                    store: store,
+                    totalPrice: totalPrice,
+                    items: checkoutItems
+                })
+            });
 
-        // 🔄 步驟 1：非同步提交至 Google 表單
-        const formData = new URLSearchParams();
-        formData.append(FIELD_STORE, store);
-        formData.append(FIELD_ITEMS, itemsSummaryString);
-        formData.append(FIELD_PRICE, totalPrice);
-        formData.append(FIELD_DATE, orderDate);
+            const result = await response.json();
 
-        fetch(GOOGLE_FORM_SUBMIT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData.toString()
-        }).then(() => {
-            console.log("訂單已成功寫入 Google 表單！");
-        }).catch(err => {
-            console.error("寫入表單失敗：", err);
-        });
+            if (result.status === "success") {
+                // 雲端確認鎖定扣款成功後，本地生成 Excel 抓貨單下載
+                const orderRows = [
+                    ['【D級出清品專區 - 抓貨通知單】'],
+                    ['下載日期：', orderDate],
+                    ['指定門市：', store],
+                    [''], 
+                    ['商品所在門市', '品牌', '購買型號', '產品等級', '產品類型', '電池健康度', 'IMEI序號', '出清金額']
+                ];
 
-        // 🔄 步驟 2：從庫存陣列中剃除已售出的商品
-        const remainingProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
+                cart.forEach(item => {
+                    orderRows.push([
+                        item.store, item.brand, item.model, item.level, item.type, item.battery, item.imei, item.price
+                    ]);
+                });
+                orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
 
-        // 🔄 步驟 3：嘗試將新庫存寫回 GitHub (雲端同步扣庫存)
-        const user = localStorage.getItem('gh_user');
-        const repo = localStorage.getItem('gh_repo');
-        const token = localStorage.getItem('gh_token');
+                const ws = XLSX.utils.aoa_to_sheet(orderRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
+                
+                const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
 
-        let isCloudSynced = false;
-        if (user && repo && token) {
-            // 如果商家在當前瀏覽器有儲存 GitHub 金鑰，此時會順利呼叫並完成寫入
-            isCloudSynced = await pushNewDataToGitHub(user, repo, token, remainingProducts);
-        } else {
-            // ⚠️ 如果是客人下單，因客人電腦沒有 Token 欄位，系統會彈出提示請客人聯絡管理員下架
-            console.log("當前操作環境無 GitHub 管理金鑰，改由本地下架，並提示管理員處理。");
+                alert(`🎉 訂單處理成功！\n\n1. 雲端庫存已即時成功扣除（所有裝置的畫面重新整理後，此商品皆會消失，防重複購買）。\n2. 訂單已傳送至雲端試算表。\n3. 本地已自動下載 Excel 抓貨單：${fileName}`);
+                
+                // 重置購物車、關閉彈窗並即時拉取最新庫存
+                cart = [];
+                updateCartBadge();
+                closeCartModal();
+                document.getElementById('custStore').value = '';
+                await fetchProductsFromCloud();
+
+            } else if (result.status === "conflict") {
+                // 如果有人在此之前已結帳成功
+                alert(`⚠️ 下單失敗：\n${result.message}`);
+                await fetchProductsFromCloud(); // 重新拉取新狀態
+            } else {
+                alert(`❌ 雲端交易失敗：${result.message}`);
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("❌ 與雲端資料庫通訊時發生錯誤，請檢查網路連線狀態！");
+        } finally {
+            btnCheckout.disabled = false;
+            btnCheckout.innerText = "✅ 送出訂單並下載抓貨單";
         }
-
-        // 更新本地端顯示
-        filteredProducts = remainingProducts;
-        
-        // 記憶售出狀態（防當前頁面在重新部署期間重新跑出該商品）
-        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
-        soldImeis = soldImeis.concat(checkoutImeis);
-        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
-
-        renderProducts(filteredProducts);
-        updateFilters();
-
-        // 🔄 步驟 4：自動生成並下載 Excel 抓貨單
-        const orderRows = [
-            ['【D級出清品專區 - 抓貨通知單】'],
-            ['下載日期：', orderDate],
-            ['指定門市：', store],
-            [''], 
-            ['商品所在門市', '品牌', '購買型號', '產品等級', '產品類型', '電池健康度', 'IMEI序號', '出清金額']
-        ];
-
-        cart.forEach(item => {
-            orderRows.push([
-                item.store, item.brand, item.model, item.level, item.type, item.battery, item.imei, item.price
-            ]);
-        });
-        orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
-
-        const ws = XLSX.utils.aoa_to_sheet(orderRows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
-        
-        const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-
-        // 根據雲端同步結果顯示不同訊息
-        if (isCloudSynced) {
-            alert(`🎉 訂單處理成功！\n\n1. 雲端庫存已實時自動下架（所有裝置重新整理後，此商品即會消失，防重複購買）。\n2. 訂單已自動提交至 Google 表單。\n3. 已下載抓貨單：${fileName}`);
-        } else {
-            alert(`🎉 訂單處理成功！\n\n1. 訂單已傳送至雲端 (Google 表單)。\n2. 系統已自動下載抓貨單：${fileName}\n\n⚠️ 提醒：目前網頁並未偵測到管理金鑰。若此台電腦非管理端，請務必請管理員手動至後台點選「一鍵更新庫存」，或請管理員在常用裝置上完成 GitHub 的設定！`);
-        }
-        
-        cart = [];
-        updateCartBadge();
-        closeCartModal();
-        document.getElementById('custStore').value = '';
-        btnCheckout.disabled = false;
-        btnCheckout.innerText = "✅ 送出訂單並下載抓貨單";
     }
     </script>
 </body>
