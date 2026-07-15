@@ -8081,8 +8081,7 @@
 
     <script>
     // ==========================================
-    // ⚠️ 核心：這裡就是「寫死商品資料」的陣列 ⚠️
-    // 當你使用下方的「匯出」按鈕時，系統會自動重寫這一區並產出新網頁。
+    // ⚠️ 核心商品資料（匯出時系統會自動重寫此處） ⚠️
     // ==========================================
     let filteredProducts = [
     {
@@ -12734,11 +12733,20 @@
 
     let cart = [];
 
-    // 頁面加載時，直接渲染已經寫死在 filteredProducts 陣列裡的商品
+    // 頁面加載時：排除已經在瀏覽器中下單（售出）的商品
     window.onload = function() {
+        cleanSoldProducts();
         renderProducts(filteredProducts);
         updateFilters();
     };
+
+    // 排除本地已被標記售出的商品（避免重新整理網頁後商品又死而復生）
+    function cleanSoldProducts() {
+        const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        if (soldImeis.length > 0) {
+            filteredProducts = filteredProducts.filter(p => !soldImeis.includes(p.imei));
+        }
+    }
 
     // 商家後台解鎖功能 (預設密碼：8888)
     function verifyAdmin() {
@@ -12788,7 +12796,10 @@
                 }
             });
 
-            alert(`✅ 讀取與篩選成功！\n原始庫存共 ${totalImported} 筆，已篩選出「D級出清品」共 ${filteredProducts.length} 筆商品！\n請點擊下方的「💾 匯出已更新商品的網頁」下載新網頁，上傳後客人才看的到喔！`);
+            // 商家重新匯入時，清除本地的售出記憶
+            localStorage.removeItem('sold_products');
+
+            alert(`✅ 讀取與篩選成功！\n原始庫存共 ${totalImported} 筆，已篩選出「D級出清品」共 ${filteredProducts.length} 筆商品！\n請點擊下方的「💾 匯出已更新商品的網頁」下載新網頁！`);
             renderProducts(filteredProducts);
             updateFilters();
             
@@ -12798,7 +12809,7 @@
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // ⭐【核心新功能】自動重新組裝 HTML 並匯出下載
+    // 自動重新組裝 HTML 並匯出下載
     function exportNewHtml() {
         if (filteredProducts.length === 0) {
             alert('目前無任何商品資料，無法匯出網頁！');
@@ -12811,7 +12822,7 @@
         // 將商品資料轉為乾淨的 JSON 字串
         const jsonString = JSON.stringify(filteredProducts, null, 4);
 
-        // 使用正則表達式，精準尋找程式碼中的 `let filteredProducts = [...];` 區塊，並替換為最新的商品資料
+        // 精準尋找程式碼中的 `let filteredProducts = [...];` 區塊，並替換為最新的商品資料
         const targetRegex = /let filteredProducts = \[\s*[\s\S]*?\];/;
         const newCode = `let filteredProducts = ${jsonString};`;
         
@@ -12821,7 +12832,7 @@
         const blob = new Blob([newHtml], { type: "text/html;charset=utf-8" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "index.html"; // 預設檔名為 index.html，方便上傳直接可用
+        a.download = "index.html"; 
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -12926,6 +12937,7 @@
         renderCartItems();
     }
 
+    // 更新購物車數量標記
     function updateCartBadge() {
         document.getElementById('cartCount').innerText = cart.length;
     }
@@ -12968,7 +12980,7 @@
         document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
     }
 
-    // 6. 下單成功：自動產生 Excel 抓貨單
+    // 6. 下單成功：自動扣除商品庫存，並產生抓貨單
     function checkoutAndGenerateOrder() {
         if (cart.length === 0) { alert('購物車內沒有商品，無法送出訂單！'); return; }
         
@@ -12980,6 +12992,7 @@
 
         const orderDate = new Date().toLocaleString('zh-TW');
         
+        // 抓貨單基本資料
         const orderRows = [
             ['【D級出清品專區 - 抓貨通知單】'],
             ['下載日期：', orderDate],
@@ -12989,8 +13002,11 @@
         ];
 
         let totalPrice = 0;
+        const checkoutImeis = []; // 收集本次結帳的 IMEI 序號
+
         cart.forEach(item => {
             totalPrice += item.price;
+            checkoutImeis.push(item.imei);
             orderRows.push([
                 item.store,
                 item.brand,
@@ -13005,6 +13021,25 @@
         
         orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
 
+        // ==========================================
+        // 🔄 關鍵功能：前台下單完後，自動扣除選中的商品 🔄
+        // ==========================================
+        
+        // A. 更新當前網頁內的 filteredProducts (不含已結帳商品)
+        filteredProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
+
+        // B. 將已被扣除的 IMEI 存入客人的 LocalStorage (防重新整理死而復生)
+        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        soldImeis = soldImeis.concat(checkoutImeis);
+        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
+
+        // C. 即時重新渲染前台，商品卡片會立刻從螢幕消失
+        renderProducts(filteredProducts);
+        updateFilters();
+
+        // ==========================================
+
+        // 產生並下載抓貨單
         const ws = XLSX.utils.aoa_to_sheet(orderRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
@@ -13012,8 +13047,9 @@
         const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
-        alert(`🎉 訂單處理成功！\n系統已自動下載「${fileName}」\n請將這個檔案直接傳給後台進行抓貨保留！`);
+        alert(`🎉 訂單處理成功！商品已從架上扣除並下架！\n系統已自動下載「${fileName}」\n請將這個檔案傳給後台進行實體抓貨！`);
         
+        // 清空購物車與表單
         cart = [];
         updateCartBadge();
         closeCartModal();
