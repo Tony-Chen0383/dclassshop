@@ -42,9 +42,33 @@
             margin-bottom: 18px;
         }
 
+        /* 商家管理登入與操作專區 */
+        .admin-auth {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .admin-panel {
+            display: none; /* 預設隱藏，密碼正確才顯示 */
+            background: #fff9db;
+            border: 1px dashed #f59f00;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 11px; 
+        }
+        .admin-panel-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .admin-panel span { font-weight: 600; color: #1d1d1f; }
+        
         input, select, button { box-sizing: border-box; font-size: 12px; font-family: inherit; }
         
-        input[type="text"] {
+        input[type="text"], input[type="password"] {
             padding: 6px 10px;
             background: #ffffff;
             border: 1px solid #d2d2d7;
@@ -52,7 +76,7 @@
             color: #1d1d1f;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="password"]:focus {
             border-color: #007aff;
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
             outline: none;
@@ -74,6 +98,8 @@
         .mac-btn:active { transform: scale(0.98); }
         .btn-blue { background: #007aff; color: #ffffff; }
         .btn-blue:hover { background: #0062cc; }
+        .btn-orange { background: #f59f00; color: #ffffff; font-weight: 600; }
+        .btn-orange:hover { background: #f08c00; }
         .btn-gray { background: #e5e5ea; color: #1d1d1f; }
         .btn-gray:hover { background: #d1d1d6; }
         .btn-green { background: #34c759; color: #ffffff; font-weight: 600; font-size: 13px; padding: 8px 16px;}
@@ -243,21 +269,31 @@
             text-align: right;
         }
         .total-text { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: block; }
-
-        /* 讀取中提示樣式 */
-        .loading-text {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: #86868b;
-            padding: 50px 0;
-            font-size: 13px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="admin-auth">
+            <input type="password" id="adminPassword" placeholder="輸入商家密碼解鎖後台" style="font-size: 10px; width: 150px;">
+            <button onclick="verifyAdmin()" class="mac-btn btn-gray" style="font-size: 10px; padding: 3px 8px;">驗證</button>
+        </div>
+
         <h1>📱 D級出清品直購專區</h1>
-        <div class="sub-title">本區庫存實時與 Google 雲端試算表自動同步</div>
+        <div class="sub-title">本區僅限販售「D級出清品」</div>
+        
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-panel-flex">
+                <span>⚙️ 商家後台：匯入 Excel 篩選商品</span>
+                <div>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="font-size: 11px;">
+                    <button onclick="handleFileRead()" class="mac-btn btn-blue">📥 匯入並篩選</button>
+                </div>
+            </div>
+            <div style="margin-top: 10px; border-top: 1px dashed #ffd43b; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #e67e22;">💡 匯入完成後，點擊右側按鈕下載新網頁，再將新網頁上傳即可更新客人端商品：</span>
+                <button onclick="exportNewHtml()" class="mac-btn btn-orange" id="btnExport" style="display: none;">💾 匯出已更新商品的網頁</button>
+            </div>
+        </div>
 
         <div class="search-bar">
             <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="🔍 搜尋機型、品牌、IMEI碼...">
@@ -274,8 +310,7 @@
         </div>
 
         <div id="productGrid" class="product-grid">
-            <div class="loading-text">🔄 正在連線 Google 雲端資料庫，載入最新庫存中...</div>
-        </div>
+            </div>
     </div>
 
     <div class="floating-cart" onclick="openCartModal()">
@@ -290,7 +325,8 @@
                 <button class="mac-btn btn-gray" style="width: auto; height: auto; padding: 2px 6px;" onclick="closeCartModal()">✕</button>
             </div>
             
-            <div id="cartItemsList"></div>
+            <div id="cartItemsList">
+                </div>
 
             <span class="total-text" id="cartTotalText">總金額：$0</span>
 
@@ -311,85 +347,132 @@
 
     <script>
     // ==========================================
-    // 🔗 雲端試算表 CSV 實時資料源 (已綁定您提供的發佈連結)
+    // ⚠️ 核心商品資料（匯出時系統會自動重寫此處） ⚠️
     // ==========================================
-    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYn6zteRhvydk8_rZDYjbd6cmokaYybJVjkMsxSyMyqyA7w7KCn8N-rZzj03eAuZVBE6luK1BCuRiO/pub?output=csv";
+    let filteredProducts = []; 
+    // ==========================================
 
     // ==================================================================
-    // 🔗 Google 表單設定 (已完全對接您提供的正確 ID)
+    // 🔗 Google 表單對接設定 (已自動對接您的 Form 與 entry ID)
     // ==================================================================
     const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
-    const FIELD_STORE = "entry.622983435";       // 您的「指定取貨門市 / 買家所屬門市」欄位
-    const FIELD_ITEMS = "entry.732769472";       // 您的「購買商品明細」欄位
-    const FIELD_PRICE = "entry.570634756";       // 您的「總金額」欄位
-    const FIELD_DATE = "entry.112740061";        // 您的「下單時間」欄位
+    const FIELD_STORE = "entry.622983435";       // 指定取貨門市
+    const FIELD_ITEMS = "entry.732769472";       // 購買商品明細
+    const FIELD_PRICE = "entry.570634756";       // 總金額
+    const FIELD_DATE = "entry.112740061";        // 下單時間
     // ==================================================================
 
-    let allCloudProducts = []; // 雲端下載的原生庫存
-    let filteredProducts = []; // 過濾後的上架庫存
     let cart = [];
 
-    // 網頁開啟時，自動連線 Google Sheets 載入最新資料
+    // 頁面加載時：排除已經在瀏覽器中下單（售出）的商品
     window.onload = function() {
-        loadProductsFromCloud();
+        cleanSoldProducts();
+        renderProducts(filteredProducts);
+        updateFilters();
     };
 
-    // 從雲端 CSV 下載並解析成商品清單
-    function loadProductsFromCloud() {
-        fetch(GOOGLE_SHEET_CSV_URL)
-            .then(response => {
-                if (!response.ok) throw new Error("雲端資料庫回應異常，請確認試算表發佈狀態。");
-                return response.text();
-            })
-            .then(csvText => {
-                // 使用 SheetJS 解析下載回來的 CSV 資料
-                const workbook = XLSX.read(csvText, { type: 'string' });
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
-                allCloudProducts = [];
-                jsonData.forEach(item => {
-                    const type = (item['類型'] || item['Type'] || '').toString().trim();
-                    const level = (item['等級'] || item['Level'] || '').toString().trim();
-                    
-                    let price = parseFloat(item['設定售價'] || item['售價'] || item['價格'] || 0);
-                    if (isNaN(price)) { price = 0; }
-
-                    // 自動規則：只篩選出「出清品」或是「D級」的特惠機款
-                    if (type === '出清品' || level === 'D級') {
-                        allCloudProducts.push({
-                            store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(),
-                            brand: (item['品牌'] || '其他').toString().trim(),
-                            model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(),
-                            level: level || '-',
-                            type: type || '-',
-                            subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(),
-                            battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(),
-                            version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
-                            imei: (item['IMEI'] || item['序號'] || '').toString().trim(),
-                            price: price
-                        });
-                    }
-                });
-
-                // 排查本地已被此顧客下單的商品，避免重複買
-                cleanSoldProducts();
-                renderProducts(filteredProducts);
-                updateFilters();
-            })
-            .catch(error => {
-                console.error("實時同步發生錯誤:", error);
-                document.getElementById('productGrid').innerHTML = `
-                    <div class="loading-text" style="color: #ff3b30;">
-                        ❌ 連線失敗：無法從雲端同步庫存。<br>
-                        請確認您的 Google 試算表已完成「檔案 -> 共用 -> 發佈到網路 (CSV)」之設定。
-                    </div>`;
-            });
-    }
-
-    // 排除本地已被標記售出的商品
+    // 排除本地已被標記售出的商品（避免重新整理網頁後商品又死而復生）
     function cleanSoldProducts() {
         const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
-        filteredProducts = allCloudProducts.filter(p => !soldImeis.includes(p.imei));
+        if (soldImeis.length > 0) {
+            filteredProducts = filteredProducts.filter(p => !soldImeis.includes(p.imei));
+        }
+    }
+
+    // 商家後台解鎖功能 (預設密碼：8888)
+    function verifyAdmin() {
+        const pass = document.getElementById('adminPassword').value;
+        if (pass === '8888') {
+            document.getElementById('adminPanel').style.display = 'block';
+            alert('🔓 商家後台已成功解鎖！您可以開始匯入 Excel 庫存。');
+        } else {
+            alert('❌ 密碼錯誤，無法解鎖商家後台。');
+        }
+    }
+
+    // 1. 讀取並過濾 Excel 檔案
+    function handleFileRead() {
+        const fileInput = document.getElementById('excelFileInput');
+        if (!fileInput.files[0]) { alert('請先選擇庫存 Excel 檔案！'); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { range: 1 });
+            
+            filteredProducts = [];
+            let totalImported = 0;
+
+            jsonData.forEach(item => {
+                totalImported++;
+                const type = (item['類型'] || item['Type'] || '').toString().trim();
+                const level = (item['等級'] || item['Level'] || '').toString().trim();
+                
+                let price = parseFloat(item['設定售價'] || item['售價'] || item['價格'] || 0);
+                if (isNaN(price)) { price = 0; }
+
+                if (type === '出清品' || level === 'D級') {
+                    filteredProducts.push({
+                        store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(),
+                        brand: (item['品牌'] || '其他').toString().trim(),
+                        model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(),
+                        level: level || '-',
+                        type: type || '-',
+                        subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(),
+                        battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(),
+                        version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
+                        imei: (item['IMEI'] || item['序號'] || '').toString().trim(),
+                        originalImei: (item['原始IMEI'] || item['原始序號'] || '-').toString().trim(), // 新增原始 IMEI
+                        tradeInModel: (item['換購機款'] || '-').toString().trim(),                     // 新增換購機款
+                        note: (item['說明'] || '-').toString().trim(),                                  // 新增說明
+                        vendor: (item['回收廠商'] || '-').toString().trim(),                            // 新增回收廠商
+                        price: price
+                    });
+                }
+            });
+
+            // 商家重新匯入時，清除本地的售出記憶
+            localStorage.removeItem('sold_products');
+
+            alert(`✅ 讀取與篩選成功！\n原始庫存共 ${totalImported} 筆，已篩選出「D級出清品」共 ${filteredProducts.length} 筆商品！\n請點擊下方的「💾 匯出已更新商品的網頁」下載新網頁！`);
+            renderProducts(filteredProducts);
+            updateFilters();
+            
+            // 顯示匯出按鈕
+            document.getElementById('btnExport').style.display = 'inline-flex';
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+
+    // 自動重新組裝 HTML 並匯出下載
+    function exportNewHtml() {
+        if (filteredProducts.length === 0) {
+            alert('目前無任何商品資料，無法匯出網頁！');
+            return;
+        }
+
+        // 讀取當前 HTML 檔案的所有原始碼
+        let currentHtml = document.documentElement.outerHTML;
+
+        // 將商品資料轉為乾淨的 JSON 字串
+        const jsonString = JSON.stringify(filteredProducts, null, 4);
+
+        // 精準尋找程式碼中的 `let filteredProducts = [...];` 區塊，並替換為最新的商品資料
+        const targetRegex = /let filteredProducts = \[\s*[\s\S]*?\];/;
+        const newCode = `let filteredProducts = ${jsonString};`;
+        
+        let newHtml = "<!DOCTYPE html>\n" + currentHtml.replace(targetRegex, newCode);
+
+        // 將替換後的原始碼轉為檔案並自動觸發瀏覽器下載
+        const blob = new Blob([newHtml], { type: "text/html;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "index.html"; 
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        alert("🎉 網頁已成功產生並下載！\n新檔案名稱為：index.html\n您現在只需要將這個全新的 index.html 上傳到 GitHub Pages 或 Vercel，外部客人打開網頁時就會看到最新商品了！");
     }
 
     // 2. 動態生成商品卡片
@@ -398,7 +481,7 @@
         grid.innerHTML = '';
         
         if (list.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前雲端資料庫無符合條件之「D級出清品」商品。</p>';
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前架上無「D級出清品」商品。請由上方商家驗證匯入 Excel 庫存上架！</p>';
             document.getElementById('totalOnSale').innerText = '0';
             return;
         }
@@ -438,7 +521,7 @@
         });
     }
 
-    // 3. 更新篩選下拉選單
+    // 3. 更新篩選清單
     function updateFilters() {
         const brands = [...new Set(filteredProducts.map(p => p.brand))].filter(Boolean);
         const stores = [...new Set(filteredProducts.map(p => p.store))].filter(Boolean);
@@ -450,7 +533,7 @@
         storeSelect.innerHTML = '<option value="">所有門市</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
     }
 
-    // 4. 前台搜尋與篩選
+    // 4. 搜尋篩選
     function filterProducts() {
         const keyword = document.getElementById('searchInput').value.toLowerCase();
         const brand = document.getElementById('brandFilter').value;
@@ -468,7 +551,7 @@
         renderProducts(filtered);
     }
 
-    // 5. 購物車操作
+    // 5. 購物車操作邏輯
     function addToCart(imei) {
         const product = filteredProducts.find(p => p.imei === imei);
         if (!product) return;
@@ -480,6 +563,7 @@
         
         cart.push(product);
         updateCartBadge();
+        alert(`已將「${product.model}」加入購物車！`);
     }
 
     function removeFromCart(imei) {
@@ -488,6 +572,7 @@
         renderCartItems();
     }
 
+    // 更新購物車數量標記
     function updateCartBadge() {
         document.getElementById('cartCount').innerText = cart.length;
     }
@@ -530,12 +615,12 @@
         document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
     }
 
-    // 6. 結帳：在客人瀏覽器扣除商品、自動提交至 Google 表單、下載抓貨單 Excel
+    // 6. 下單成功：自動扣除商品庫存、自動提交至 Google 表單、產生抓貨單
     function checkoutAndGenerateOrder() {
         if (cart.length === 0) { alert('購物車內沒有商品，無法送出訂單！'); return; }
         
-        const storeInput = document.getElementById('custStore').value.trim();
-        if (!storeInput) {
+        const store = document.getElementById('custStore').value.trim();
+        if (!store) {
             alert('請填寫指定取貨門市！');
             return;
         }
@@ -544,22 +629,34 @@
         
         // 整理商品資料以提交至 Google 表單
         let totalPrice = 0;
-        const checkoutImeis = [];
+        const checkoutImeis = []; // 收集本次結帳的 IMEI 序號
         let itemsSummaryArray = [];
 
         cart.forEach(item => {
             totalPrice += item.price;
             checkoutImeis.push(item.imei);
-            itemsSummaryArray.push(`${item.model} (IMEI: ${item.imei || '無'}) [$${item.price}]`);
+            
+            // 🔄 【特別設計】根據圖片欄位排版的「購買商品明細」
+            itemsSummaryArray.push(
+                `【${item.subCategory}】${item.brand} ${item.model} | ` +
+                `換購: ${item.tradeInModel} | ` +
+                `說明: ${item.note} | ` +
+                `回收商: ${item.vendor} | ` +
+                `IMEI: ${item.imei} | ` +
+                `原始IMEI: ${item.originalImei} | ` +
+                `等級: ${item.level} | ` +
+                `金額: $${item.price}`
+            );
         });
 
-        const itemsSummaryString = itemsSummaryArray.join("、 "); // 串接所有下單商品
+        // 換行串接所有下單商品，這樣在 Google 表單與 Excel 後台會排版得一清二楚！
+        const itemsSummaryString = itemsSummaryArray.join("\n"); 
 
         // ==========================================
-        // 🔄 步驟 1：自動非同步提交資料至 Google 表單 (已對接您的實體表單)
+        // 🔄 步驟 1：自動非同步提交資料至 Google 表單
         // ==========================================
         const formData = new URLSearchParams();
-        formData.append(FIELD_STORE, storeInput);
+        formData.append(FIELD_STORE, store);
         formData.append(FIELD_ITEMS, itemsSummaryString);
         formData.append(FIELD_PRICE, totalPrice);
         formData.append(FIELD_DATE, orderDate);
@@ -583,7 +680,7 @@
         const orderRows = [
             ['【D級出清品專區 - 抓貨通知單】'],
             ['下載日期：', orderDate],
-            ['指定門市：', storeInput],
+            ['指定門市：', store],
             [''], 
             ['商品所在門市', '品牌', '購買型號', '產品等級', '產品類型', '電池健康度', 'IMEI序號', '出清金額']
         ];
@@ -601,36 +698,4 @@
             ]);
         });
         
-        orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
-
-        // A. 更新當前網頁內的 filteredProducts (排除掉剛下單結帳商品)
-        filteredProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
-
-        // B. 將已被下單的 IMEI 寫入客戶瀏覽器的 LocalStorage，防止重新整理後復活
-        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
-        soldImeis = soldImeis.concat(checkoutImeis);
-        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
-
-        // C. 即時重新顯示網頁，售出的卡片會立刻不見
-        renderProducts(filteredProducts);
-        updateFilters();
-
-        // 產生並下載抓貨單 Excel 檔案
-        const ws = XLSX.utils.aoa_to_sheet(orderRows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
-        
-        const fileName = `特惠抓貨單_${storeInput}_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-
-        alert(`🎉 訂單處理成功！\n1. 您選購的商品已即時從瀏覽器畫面上架下架（防重複下單）。\n2. 訂單已安全傳送至雲端後台 (Google 表單)。\n3. 系統已同步為您下載抓貨單 Excel「${fileName}」備查！`);
-        
-        // 清空購物車與取貨門市
-        cart = [];
-        updateCartBadge();
-        closeCartModal();
-        document.getElementById('custStore').value = '';
-    }
-    </script>
-</body>
-</html>
+        orderRows.push(
