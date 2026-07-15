@@ -52,7 +52,7 @@
             display: none; /* 預設隱藏，密碼正確才顯示 */
             background: #fff9db;
             border: 1px dashed #f59f00;
-            padding: 12px 15px;
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 18px;
             font-size: 11px; 
@@ -62,7 +62,7 @@
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 12px;
         }
         .admin-panel span { font-weight: 600; color: #1d1d1f; }
         
@@ -282,16 +282,22 @@
         <div class="sub-title">本區僅限販售「D級出清品」</div>
         
         <div class="admin-panel" id="adminPanel">
-            <div class="admin-panel-flex">
-                <span>⚙️ 商家後台：匯入 Excel 篩選商品</span>
-                <div>
-                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="font-size: 11px;">
-                    <button onclick="handleFileRead()" class="mac-btn btn-blue">📥 匯入並篩選</button>
+            <div style="background: #f1f3f5; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
+                <span style="font-weight: 700; display: block; margin-bottom: 6px; color: #495057;">🔗 GitHub 自動同步設定（首次使用請填寫，資料僅保存在此電腦中）</span>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="ghUser" placeholder="GitHub 帳號名稱" style="width: 150px;">
+                    <input type="text" id="ghRepo" placeholder="Repo 專案名稱" style="width: 150px;">
+                    <input type="password" id="ghToken" placeholder="GitHub PAT Token 金鑰 (ghp_...)" style="flex: 1; min-width: 200px;">
+                    <button onclick="saveGitHubSettings()" class="mac-btn btn-gray" style="background: #228be6; color: #fff;">儲存設定</button>
                 </div>
             </div>
-            <div style="margin-top: 10px; border-top: 1px dashed #ffd43b; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #e67e22;">💡 匯入完成後，點擊右側按鈕下載新網頁，再將新網頁上傳即可更新客人端商品：</span>
-                <button onclick="exportNewHtml()" class="mac-btn btn-orange" id="btnExport" style="display: none;">💾 匯出已更新商品的網頁</button>
+
+            <div class="admin-panel-flex">
+                <span>⚙️ 商家後台：匯入 Excel 篩選商品並實時同步至 GitHub</span>
+                <div>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="font-size: 11px;">
+                    <button onclick="handleFileRead()" class="mac-btn btn-blue" id="btnImportAndUpload">📥 1鍵匯入並上架到 GitHub</button>
+                </div>
             </div>
         </div>
 
@@ -309,8 +315,7 @@
             <div class="summary-badge">目前架上特惠商品：<strong id="totalOnSale">0</strong> 件</div>
         </div>
 
-        <div id="productGrid" class="product-grid">
-            </div>
+        <div id="productGrid" class="product-grid"></div>
     </div>
 
     <div class="floating-cart" onclick="openCartModal()">
@@ -325,8 +330,7 @@
                 <button class="mac-btn btn-gray" style="width: auto; height: auto; padding: 2px 6px;" onclick="closeCartModal()">✕</button>
             </div>
             
-            <div id="cartItemsList">
-                </div>
+            <div id="cartItemsList"></div>
 
             <span class="total-text" id="cartTotalText">總金額：$0</span>
 
@@ -347,13 +351,13 @@
 
     <script>
     // ==========================================
-    // ⚠️ 核心商品資料（匯出時系統會自動重寫此處） ⚠️
+    // ⚠️ 核心商品資料（更新時會自動重寫此處，並推送到 GitHub） ⚠️
     // ==========================================
     let filteredProducts = []; 
     // ==========================================
 
     // ==================================================================
-    // 🔗 Google 表單對接設定 (已自動對接您的 Form 與 entry ID)
+    // 🔗 Google 表單對接設定
     // ==================================================================
     const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435";       // 指定取貨門市
@@ -364,14 +368,14 @@
 
     let cart = [];
 
-    // 頁面加載時：排除已經在瀏覽器中下單（售出）的商品
     window.onload = function() {
+        // 載入本地 GitHub 設定
+        loadGitHubSettings();
         cleanSoldProducts();
         renderProducts(filteredProducts);
         updateFilters();
     };
 
-    // 排除本地已被標記售出的商品（避免重新整理網頁後商品又死而復生）
     function cleanSoldProducts() {
         const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
         if (soldImeis.length > 0) {
@@ -379,21 +383,54 @@
         }
     }
 
-    // 商家後台解鎖功能 (預設密碼：8888)
+    // 商家密碼解鎖功能 (預設密碼：8888)
     function verifyAdmin() {
         const pass = document.getElementById('adminPassword').value;
         if (pass === '8888') {
             document.getElementById('adminPanel').style.display = 'block';
-            alert('🔓 商家後台已成功解鎖！您可以開始匯入 Excel 庫存。');
+            alert('🔓 商家後台已成功解鎖！');
         } else {
-            alert('❌ 密碼錯誤，無法解鎖商家後台。');
+            alert('❌ 密碼錯誤！');
         }
     }
 
-    // 1. 讀取並過濾 Excel 檔案
+    // 儲存與讀取 GitHub 金鑰設定（存於 LocalStorage）
+    function saveGitHubSettings() {
+        const user = document.getElementById('ghUser').value.trim();
+        const repo = document.getElementById('ghRepo').value.trim();
+        const token = document.getElementById('ghToken').value.trim();
+        
+        if (!user || !repo || !token) { alert('請完整填寫 GitHub 設定！'); return; }
+        
+        localStorage.setItem('gh_user', user);
+        localStorage.setItem('gh_repo', repo);
+        localStorage.setItem('gh_token', token);
+        alert('💾 GitHub 自動上架設定已安全保存在本地瀏覽器！');
+    }
+
+    function loadGitHubSettings() {
+        document.getElementById('ghUser').value = localStorage.getItem('gh_user') || '';
+        document.getElementById('ghRepo').value = localStorage.getItem('gh_repo') || '';
+        document.getElementById('ghToken').value = localStorage.getItem('gh_token') || '';
+    }
+
+    // 1. 讀取並篩選 Excel 檔案
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
         if (!fileInput.files[0]) { alert('請先選擇庫存 Excel 檔案！'); return; }
+        
+        const user = localStorage.getItem('gh_user');
+        const repo = localStorage.getItem('gh_repo');
+        const token = localStorage.getItem('gh_token');
+        if (!user || !repo || !token) {
+            alert('❌ 尚未儲存 GitHub 自動同步設定！請先完成上方 GitHub 欄位設定。');
+            return;
+        }
+
+        const btn = document.getElementById('btnImportAndUpload');
+        btn.disabled = true;
+        btn.innerText = "⏳ 正在解析 Excel 庫存...";
+
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
@@ -422,57 +459,77 @@
                         battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(),
                         version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
                         imei: (item['IMEI'] || item['序號'] || '').toString().trim(),
-                        originalImei: (item['原始IMEI'] || item['原始序號'] || '-').toString().trim(), // 新增原始 IMEI
-                        tradeInModel: (item['換購機款'] || '-').toString().trim(),                     // 新增換購機款
-                        note: (item['說明'] || '-').toString().trim(),                                  // 新增說明
-                        vendor: (item['回收廠商'] || '-').toString().trim(),                            // 新增回收廠商
+                        originalImei: (item['原始IMEI'] || item['原始序號'] || '-').toString().trim(),
+                        tradeInModel: (item['換購機款'] || '-').toString().trim(),
+                        note: (item['說明'] || '-').toString().trim(),
+                        vendor: (item['回收廠商'] || '-').toString().trim(),
                         price: price
                     });
                 }
             });
 
-            // 商家重新匯入時，清除本地的售出記憶
+            // 清除本地已售出記憶
             localStorage.removeItem('sold_products');
-
-            alert(`✅ 讀取與篩選成功！\n原始庫存共 ${totalImported} 筆，已篩選出「D級出清品」共 ${filteredProducts.length} 筆商品！\n請點擊下方的「💾 匯出已更新商品的網頁」下載新網頁！`);
             renderProducts(filteredProducts);
             updateFilters();
-            
-            // 顯示匯出按鈕
-            document.getElementById('btnExport').style.display = 'inline-flex';
+
+            // 觸發 GitHub 自動推送
+            pushNewDataToGitHub(user, repo, token);
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // 自動重新組裝 HTML 並匯出下載
-    function exportNewHtml() {
-        if (filteredProducts.length === 0) {
-            alert('目前無任何商品資料，無法匯出網頁！');
-            return;
+    // 🚀【核心功能】利用 GitHub API 將新資料推送並更新 GitHub 上的 index.html 檔案
+    async function pushNewDataToGitHub(user, repo, token) {
+        const btn = document.getElementById('btnImportAndUpload');
+        btn.innerText = "⏳ 正在與 GitHub 連線同步...";
+
+        try {
+            const filePath = "index.html"; // 要更新的檔案名稱
+            const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/${filePath}`;
+
+            // A. 第一步：先向 GitHub 獲取目前檔案的 SHA 值與完整原始碼
+            const getRes = await fetch(apiUrl, {
+                headers: { "Authorization": `token ${token}` }
+            });
+            if (!getRes.ok) throw new Error("讀取 GitHub 檔案失敗，請檢查 User, Repo 或 Token 設定！");
+            
+            const fileData = await getRes.json();
+            const currentSha = fileData.sha;
+            // 解碼目前的 HTML 代碼
+            const currentHtml = decodeURIComponent(escape(atob(fileData.content)));
+
+            // B. 第二步：替換代碼中的數據部分
+            const targetRegex = /let filteredProducts = \[\s*[\s\S]*?\];/;
+            const newCode = `let filteredProducts = ${JSON.stringify(filteredProducts, null, 4)};`;
+            const updatedHtml = currentHtml.replace(targetRegex, newCode);
+
+            // C. 第三步：將全新 HTML 編碼並上傳 commit 至 GitHub
+            const encodedContent = btoa(unescape(encodeURIComponent(updatedHtml)));
+            
+            const putRes = await fetch(apiUrl, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: `🔄 實時庫存自動上架 (共 ${filteredProducts.length} 筆商品)`,
+                    content: encodedContent,
+                    sha: currentSha
+                })
+            });
+
+            if (!putRes.ok) throw new Error("向 GitHub 寫入更新失敗！");
+
+            alert(`🎉 實時同步成功！\n全新庫存（共 ${filteredProducts.length} 筆商品）已自動推送上架至您的 GitHub 儲存庫！\n請稍等 10～30 秒讓 GitHub Pages 完成自動部署，前台即會看見最新商品。`);
+        } catch (error) {
+            console.error(error);
+            alert(`❌ 同步到 GitHub 時發生錯誤：\n${error.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "📥 1鍵匯入並上架到 GitHub";
         }
-
-        // 讀取當前 HTML 檔案的所有原始碼
-        let currentHtml = document.documentElement.outerHTML;
-
-        // 將商品資料轉為乾淨的 JSON 字串
-        const jsonString = JSON.stringify(filteredProducts, null, 4);
-
-        // 精準尋找程式碼中的 `let filteredProducts = [...];` 區塊，並替換為最新的商品資料
-        const targetRegex = /let filteredProducts = \[\s*[\s\S]*?\];/;
-        const newCode = `let filteredProducts = ${jsonString};`;
-        
-        let newHtml = "<!DOCTYPE html>\n" + currentHtml.replace(targetRegex, newCode);
-
-        // 將替換後的原始碼轉為檔案並自動觸發瀏覽器下載
-        const blob = new Blob([newHtml], { type: "text/html;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "index.html"; 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        alert("🎉 網頁已成功產生並下載！\n新檔案名稱為：index.html\n您現在只需要將這個全新的 index.html 上傳到 GitHub Pages 或 Vercel，外部客人打開網頁時就會看到最新商品了！");
     }
 
     // 2. 動態生成商品卡片
@@ -572,7 +629,6 @@
         renderCartItems();
     }
 
-    // 更新購物車數量標記
     function updateCartBadge() {
         document.getElementById('cartCount').innerText = cart.length;
     }
@@ -615,7 +671,7 @@
         document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
     }
 
-    // 6. 下單成功：自動扣除商品庫存、自動提交至 Google 表單、產生抓貨單
+    // 6. 結帳與 Google 表單串接
     function checkoutAndGenerateOrder() {
         if (cart.length === 0) { alert('購物車內沒有商品，無法送出訂單！'); return; }
         
@@ -627,16 +683,15 @@
 
         const orderDate = new Date().toLocaleString('zh-TW');
         
-        // 整理商品資料以提交至 Google 表單
         let totalPrice = 0;
-        const checkoutImeis = []; // 收集本次結帳的 IMEI 序號
+        const checkoutImeis = [];
         let itemsSummaryArray = [];
 
         cart.forEach(item => {
             totalPrice += item.price;
             checkoutImeis.push(item.imei);
             
-            // 🔄 【特別設計】根據圖片欄位排版的「購買商品明細」
+            // 寫入 Google 表單的商品格式
             itemsSummaryArray.push(
                 `【${item.subCategory}】${item.brand} ${item.model} | ` +
                 `換購: ${item.tradeInModel} | ` +
@@ -649,12 +704,9 @@
             );
         });
 
-        // 換行串接所有下單商品，這樣在 Google 表單與 Excel 後台會排版得一清二楚！
         const itemsSummaryString = itemsSummaryArray.join("\n"); 
 
-        // ==========================================
-        // 🔄 步驟 1：自動非同步提交資料至 Google 表單
-        // ==========================================
+        // 🔄 步驟 1：非同步提交至 Google 表單
         const formData = new URLSearchParams();
         formData.append(FIELD_STORE, store);
         formData.append(FIELD_ITEMS, itemsSummaryString);
@@ -663,20 +715,16 @@
 
         fetch(GOOGLE_FORM_SUBMIT_URL, {
             method: 'POST',
-            mode: 'no-cors', // 必須使用 no-cors 跨網域提交
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString()
         }).then(() => {
-            console.log("訂單已成功寫入 Google 表單！");
+            console.log("訂單已成功寫入表單！");
         }).catch(err => {
-            console.error("寫入表單發生問題，請確認網路連線：", err);
+            console.error("寫入表單失敗：", err);
         });
 
-        // ==========================================
         // 🔄 步驟 2：Excel 抓貨單與前台自動下架處理
-        // ==========================================
         const orderRows = [
             ['【D級出清品專區 - 抓貨通知單】'],
             ['下載日期：', orderDate],
@@ -698,4 +746,31 @@
             ]);
         });
         
-        orderRows.push(
+        orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
+
+        filteredProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
+
+        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        soldImeis = soldImeis.concat(checkoutImeis);
+        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
+
+        renderProducts(filteredProducts);
+        updateFilters();
+
+        const ws = XLSX.utils.aoa_to_sheet(orderRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
+        
+        const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        alert(`🎉 訂單處理成功！\n1. 商品已即時從前台下架（防重複下單）。\n2. 訂單已傳送至雲端 (Google 表單)。\n3. 系統已下載抓貨單 Excel「${fileName}」！`);
+        
+        cart = [];
+        updateCartBadge();
+        closeCartModal();
+        document.getElementById('custStore').value = '';
+    }
+    </script>
+</body>
+</html>
