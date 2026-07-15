@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>📱 D級出清品直購專區</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* 1. 頁面背景：macOS 經典白天模式暖淺灰 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; 
+            background-color: #f5f5f7;
+            padding: 15px; 
+            color: #1d1d1f; 
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            font-size: 12px;
+        }
+
+        .container { 
+            max-width: 1300px; 
+            margin: auto; 
+            background: #ffffff; 
+            padding: 20px 25px; 
+            border-radius: 12px; 
+            border: 1px solid #d2d2d7; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); 
+        }
+
+        h1 { 
+            font-size: 22px; 
+            color: #1d1d1f; 
+            text-align: center; 
+            margin: 5px 0 4px;
+            font-weight: 700; 
+            letter-spacing: -0.5px;
+        }
+
+        .sub-title {
+            text-align: center;
+            color: #86868b;
+            font-size: 12px; 
+            margin-bottom: 18px;
+        }
+
+        input, select, button { box-sizing: border-box; font-size: 12px; font-family: inherit; }
+        
+        input[type="text"] {
+            padding: 6px 10px;
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            color: #1d1d1f;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+            outline: none;
+        }
+
+        .mac-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+            border: none;
+        }
+        .mac-btn:active { transform: scale(0.98); }
+        .btn-blue { background: #007aff; color: #ffffff; }
+        .btn-blue:hover { background: #0062cc; }
+        .btn-gray { background: #e5e5ea; color: #1d1d1f; }
+        .btn-gray:hover { background: #d1d1d6; }
+        .btn-green { background: #34c759; color: #ffffff; font-weight: 600; font-size: 13px; padding: 8px 16px;}
+        .btn-green:hover { background: #28a745; }
+
+        /* 搜尋與篩選列 */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .search-bar input { flex: 1; min-width: 180px; }
+        .search-bar select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #d2d2d7;
+            background: #fff;
+        }
+
+        /* 架上統計 */
+        .summary-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .summary-badge {
+            background: #f5f5f7;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: #515154;
+            border: 1px solid #e5e5ea;
+        }
+        .summary-badge strong { color: #ff3b30; }
+
+        /* 商品展示網格 */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .product-card {
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 10px;
+            padding: 14px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            border-color: #c5c5ca;
+        }
+        .tag-group { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+        .tag {
+            font-size: 10px; 
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .tag-brand { background: #f2f2f7; color: #636366; }
+        .tag-level { background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; }
+        .tag-type { background: #e3faf2; color: #0ca678; border: 1px solid #96f2d7; }
+        .tag-store { background: #e8f4fd; color: #1d72b8; }
+
+        .product-title { font-size: 14px; font-weight: 700; margin: 3px 0 6px; color: #1d1d1f; }
+        .product-specs { font-size: 11px; color: #86868b; line-height: 1.5; margin-bottom: 10px; }
+        
+        .imei-display {
+            font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background: #f5f5f7;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #1d1d1f;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        .product-price { font-size: 18px; font-weight: 700; color: #ff3b30; margin-bottom: 8px; }
+        
+        /* 浮動購物車按鈕 */
+        .floating-cart {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #1d1d1f;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 40px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: transform 0.2s, background 0.2s;
+            z-index: 1000;
+        }
+        .floating-cart:hover { transform: scale(1.05); background: #000000; }
+        .cart-badge {
+            background: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        /* 購物車結帳彈窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #ffffff;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+            overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e5ea; padding-bottom: 10px; margin-bottom: 12px; }
+        .modal-header h2 { margin: 0; font-size: 16px; }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f7;
+            font-size: 12px;
+        }
+        .cart-item-info { flex: 1; }
+        .cart-item-title { font-weight: 600; }
+        .cart-item-imei { font-size: 11px; color: #86868b; }
+        .cart-item-price { font-weight: 600; color: #ff3b30; margin: 0 12px; }
+
+        .form-group { margin-top: 12px; }
+        .form-group label { display: block; font-size: 11px; font-weight: 600; color: #636366; margin-bottom: 4px; }
+        .form-group input { width: 100%; }
+
+        .modal-footer {
+            margin-top: 20px;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 12px;
+            text-align: right;
+        }
+        .total-text { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: block; }
+
+        .loading-text {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #86868b;
+            padding: 40px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 D級出清品直購專區</h1>
+        <div class="sub-title">本區商品資料與雲端試算表即時同步</div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="🔍 搜尋機型、品牌、IMEI碼...">
+            <select id="brandFilter" onchange="filterProducts()">
+                <option value="">所有品牌</option>
+            </select>
+            <select id="storeFilter" onchange="filterProducts()">
+                <option value="">所有門市</option>
+            </select>
+        </div>
+
+        <div class="summary-bar">
+            <div class="summary-badge">目前架上特惠商品：<strong id="totalOnSale">0</strong> 件</div>
+        </div>
+
+        <div id="productGrid" class="product-grid">
+            <div class="loading-text">🔄 正在連線雲端資料庫，載入最新庫存中...</div>
+        </div>
+    </div>
+
+    <div class="floating-cart" onclick="openCartModal()">
+        <span>🛒 購物車</span>
+        <div class="cart-badge" id="cartCount">0</div>
+    </div>
+
+    <div class="modal-overlay" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛍️ 確認選購商品與送出訂單</h2>
+                <button class="mac-btn btn-gray" style="width: auto; height: auto; padding: 2px 6px;" onclick="closeCartModal()">✕</button>
+            </div>
+            
+            <div id="cartItemsList"></div>
+
+            <span class="total-text" id="cartTotalText">總金額：$0</span>
+
+            <div style="background: #f5f5f7; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                <h3 style="margin: 0 0 4px; font-size: 12px;">🏢 填寫取貨門市</h3>
+                <div class="form-group" style="margin-top: 6px;">
+                    <label>指定取貨門市 / 買家所屬門市 *</label>
+                    <input type="text" id="custStore" placeholder="例如：台中旗艦店、台北一店">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="mac-btn btn-gray" style="width: auto;" onclick="closeCartModal()">繼續瀏覽</button>
+                <button class="mac-btn btn-green" style="width: auto;" onclick="checkoutAndGenerateOrder()">✅ 送出訂單並下載抓貨單</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ==========================================
+    // 🔗 雲端試算表 CSV 連結（實時讀取）
+    // ==========================================
+    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYn6zteRhvydk8_rZDYjbd6cmokaYybJVjkMsxSyMyqyA7w7KCn8N-rZzj03eAuZVBE6luK1BCuRiO/pub?output=csv";
+
+    let allCloudProducts = []; // 雲端抓下來的所有商品
+    let filteredProducts = []; // 經篩選後要顯示的商品
+    let cart = [];
+
+    // 頁面加載時直接讀取雲端試算表
+    window.onload = function() {
+        loadProductsFromCloud();
+    };
+
+    // 從雲端抓取與篩選資料
+    function loadProductsFromCloud() {
+        fetch(GOOGLE_SHEET_CSV_URL)
+            .then(response => {
+                if (!response.ok) throw new Error("網路連線不穩定，無法取得資料");
+                return response.text();
+            })
+            .then(csvText => {
+                // 利用 SheetJS 解析 CSV 文字為 JSON 陣列
+                const workbook = XLSX.read(csvText, { type: 'string' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                allCloudProducts = [];
+                jsonData.forEach(item => {
+                    const type = (item['類型'] || item['Type'] || '').toString().trim();
+                    const level = (item['等級'] || item['Level'] || '').toString().trim();
+                    
+                    let price = parseFloat(item['設定售價'] || item['售價'] || item['價格'] || 0);
+                    if (isNaN(price)) { price = 0; }
+
+                    // 自動篩選：僅保留類型是「出清品」或等級是「D級」的產品
+                    if (type === '出清品' || level === 'D級') {
+                        allCloudProducts.push({
+                            store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(),
+                            brand: (item['品牌'] || '其他').toString().trim(),
+                            model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(),
+                            level: level || '-',
+                            type: type || '-',
+                            subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(),
+                            battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(),
+                            version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
+                            imei: (item['IMEI'] || item['序號'] || '').toString().trim(),
+                            price: price
+                        });
+                    }
+                });
+
+                // 排除本地已結帳/售出庫存
+                cleanSoldProducts();
+                renderProducts(filteredProducts);
+                updateFilters();
+            })
+            .catch(error => {
+                console.error("雲端讀取錯誤：", error);
+                document.getElementById('productGrid').innerHTML = `<p class="loading-text" style="color:#ff3b30;">❌ 無法取得雲端庫存，請確認試算表網路發佈設定！</p>`;
+            });
+    }
+
+    // 排除本地已被標記售出的商品（避免重新整理網頁後商品又死而復生）
+    function cleanSoldProducts() {
+        const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        filteredProducts = allCloudProducts.filter(p => !soldImeis.includes(p.imei));
+    }
+
+    // 2. 動態生成商品卡片
+    function renderProducts(list) {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        
+        if (list.length === 0) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前架上無符合條件之「D級出清品」商品。</p>';
+            document.getElementById('totalOnSale').innerText = '0';
+            return;
+        }
+
+        document.getElementById('totalOnSale').innerText = list.length;
+
+        list.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            
+            let typeTagHTML = item.type !== '-' ? `<span class="tag tag-type">${item.type}</span>` : '';
+            let levelTagHTML = item.level !== '-' ? `<span class="tag tag-level">${item.level} 級</span>` : '';
+            const imeiHTML = item.imei ? `<span class="imei-display">${item.imei}</span>` : '無';
+
+            card.innerHTML = `
+                <div>
+                    <div class="tag-group">
+                        <span class="tag tag-brand">${item.brand}</span>
+                        ${levelTagHTML}
+                        ${typeTagHTML}
+                        <span class="tag tag-store">📍 ${item.store}</span>
+                    </div>
+                    <div class="product-title">${item.model}</div>
+                    <div class="product-specs">
+                        • 類別：${item.subCategory}<br>
+                        • 電池健康度：${item.battery}<br>
+                        • 版本：${item.version}<br>
+                        • IMEI / 序號：${imeiHTML}
+                    </div>
+                </div>
+                <div>
+                    <div class="product-price">$${item.price.toLocaleString()}</div>
+                    <button class="mac-btn btn-blue" style="width: 100%;" onclick="addToCart('${item.imei}')">＋ 放入購物車</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // 3. 更新篩選清單
+    function updateFilters() {
+        const brands = [...new Set(filteredProducts.map(p => p.brand))].filter(Boolean);
+        const stores = [...new Set(filteredProducts.map(p => p.store))].filter(Boolean);
+        
+        const brandSelect = document.getElementById('brandFilter');
+        brandSelect.innerHTML = '<option value="">所有品牌</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+        
+        const storeSelect = document.getElementById('storeFilter');
+        storeSelect.innerHTML = '<option value="">所有門市</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    // 4. 搜尋篩選
+    function filterProducts() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const brand = document.getElementById('brandFilter').value;
+        const store = document.getElementById('storeFilter').value;
+
+        const filtered = filteredProducts.filter(item => {
+            const matchKeyword = item.model.toLowerCase().includes(keyword) || 
+                                 item.brand.toLowerCase().includes(keyword) || 
+                                 item.imei.toLowerCase().includes(keyword);
+            const matchBrand = !brand || item.brand === brand;
+            const matchStore = !store || item.store === store;
+            return matchKeyword && matchBrand && matchStore;
+        });
+
+        renderProducts(filtered);
+    }
+
+    // 5. 購物車操作邏輯（配合需求：移除加入成功時的 alert 視窗）
+    function addToCart(imei) {
+        const product = filteredProducts.find(p => p.imei === imei);
+        if (!product) return;
+        
+        if (cart.some(item => item.imei === imei)) {
+            alert('這項商品已經在您的購物車中了！');
+            return;
+        }
+        
+        cart.push(product);
+        updateCartBadge();
+        // ❌ 此處原本有 alert(...) 提示已移除，改為無彈窗靜默加入，維持流暢體驗。
+    }
+
+    function removeFromCart(imei) {
+        cart = cart.filter(item => item.imei !== imei);
+        updateCartBadge();
+        renderCartItems();
+    }
+
+    // 更新購物車數量標記
+    function updateCartBadge() {
+        document.getElementById('cartCount').innerText = cart.length;
+    }
+
+    function openCartModal() {
+        renderCartItems();
+        document.getElementById('cartModal').style.display = 'flex';
+    }
+
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function renderCartItems() {
+        const container = document.getElementById('cartItemsList');
+        if (cart.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #86868b; padding: 15px 0;">您的購物車內目前沒有商品</p>';
+            document.getElementById('cartTotalText').innerText = '總金額：$0';
+            return;
+        }
+
+        let total = 0;
+        container.innerHTML = cart.map(item => {
+            total += item.price;
+            return `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-title">${item.model}</div>
+                        <div class="cart-item-imei">
+                            IMEI: <span style="font-family: monospace; background:#f5f5f7; padding:1px 3px;">${item.imei}</span><br>
+                            門市: ${item.store} | 等級: ${item.level}
+                        </div>
+                    </div>
+                    <div class="cart-item-price">$${item.price.toLocaleString()}</div>
+                    <button class="mac-btn btn-gray" style="width: auto; padding: 2px 6px; font-size: 11px;" onclick="removeFromCart('${item.imei}')">移除</button>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
+    }
+
+    // 6. 下單成功：自動扣除商品庫存，並產生抓貨單
+    function checkoutAndGenerateOrder() {
+        if (cart.length === 0) { alert('購物車內沒有商品，無法送出訂單！'); return; }
+        
+        const store = document.getElementById('custStore').value.trim();
+        if (!store) {
+            alert('請填寫指定取貨門市！');
+            return;
+        }
+
+        const orderDate = new Date().toLocaleString('zh-TW');
+        
+        // 抓貨單基本資料
+        const orderRows = [
+            ['【D級出清品專區 - 抓貨通知單】'],
+            ['下載日期：', orderDate],
+            ['指定門市：', store],
+            [''], 
+            ['商品所在門市', '品牌', '購買型號', '產品等級', '產品類型', '電池健康度', 'IMEI序號', '出清金額']
+        ];
+
+        let totalPrice = 0;
+        const checkoutImeis = []; // 收集本次結帳的 IMEI 序號
+
+        cart.forEach(item => {
+            totalPrice += item.price;
+            checkoutImeis.push(item.imei);
+            orderRows.push([
+                item.store,
+                item.brand,
+                item.model,
+                item.level,
+                item.type,
+                item.battery,
+                item.imei,
+                item.price
+            ]);
+        });
+        
+        orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
+
+        // ==========================================
+        // 🔄 關鍵功能：前台下單完後，自動扣除選中的商品
+        // ==========================================
+        
+        // A. 更新當前網頁內的 filteredProducts (不含已結帳商品)
+        filteredProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
+
+        // B. 將已被扣除的 IMEI 存入客人的 LocalStorage (防重新整理死而復生)
+        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        soldImeis = soldImeis.concat(checkoutImeis);
+        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
+
+        // C. 即時重新渲染前台，商品卡片會立刻從螢幕消失
+        renderProducts(filteredProducts);
+        updateFilters();
+
+        // ==========================================
+
+        // 產生並下載抓貨單
+        const ws = XLSX.utils.aoa_to_sheet(orderRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
+        
+        const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        alert(`🎉 訂單處理成功！商品已從架上扣除並下架！\n系統已自動下載「${fileName}」\n請將這個檔案傳給後台進行實體抓貨！`);
+        
+        // 清空購物車與表單
+        cart = [];
+        updateCartBadge();
+        closeCartModal();
+        document.getElementById('custStore').value = '';
+    }
+    </script>
+</body>
+</html>
