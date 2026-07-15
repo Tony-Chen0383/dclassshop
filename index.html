@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>📱 D級出清品直購專區</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* 1. 全域樣式：極簡 macOS 風格 */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; 
+            background-color: #f5f5f7;
+            padding: 15px; 
+            color: #1d1d1f; 
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            font-size: 12px;
+        }
+
+        .container { 
+            max-width: 1300px; 
+            margin: auto; 
+            background: #ffffff; 
+            padding: 20px 25px; 
+            border-radius: 12px; 
+            border: 1px solid #d2d2d7; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); 
+        }
+
+        /* 頂部導覽列 */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e5ea;
+            padding-bottom: 12px;
+        }
+
+        h1 { 
+            font-size: 22px; 
+            color: #1d1d1f; 
+            margin: 0;
+            font-weight: 700; 
+            letter-spacing: -0.5px;
+        }
+
+        .sub-title {
+            color: #86868b;
+            font-size: 12px; 
+            margin-top: 4px;
+        }
+
+        /* 商家管理登入與操作專區 */
+        .admin-trigger-btn {
+            background: #1d1d1f;
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .admin-trigger-btn:hover { background: #000000; }
+
+        .admin-panel {
+            display: none; /* 預設隱藏，密碼正確才顯示 */
+            background: #fff9db;
+            border: 1px dashed #f59f00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 11px; 
+        }
+        .admin-panel-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .admin-panel span { font-weight: 600; color: #1d1d1f; }
+        
+        input, select, button { box-sizing: border-box; font-size: 12px; font-family: inherit; }
+        
+        input[type="text"], input[type="password"] {
+            padding: 8px 12px;
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            color: #1d1d1f;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+            outline: none;
+        }
+
+        /* 下拉選單美化 */
+        select {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #d2d2d7;
+            background-color: #ffffff;
+            color: #1d1d1f;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            border-color: #007aff;
+        }
+
+        .mac-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+            border: none;
+        }
+        .mac-btn:disabled {
+            background-color: #e5e5ea !important;
+            color: #aeaeb2 !important;
+            cursor: not-allowed;
+        }
+        .mac-btn:active:not(:disabled) { transform: scale(0.98); }
+        .btn-blue { background: #007aff; color: #ffffff; }
+        .btn-blue:hover:not(:disabled) { background: #0062cc; }
+        .btn-orange { background: #f59f00; color: #ffffff; font-weight: 600; }
+        .btn-orange:hover:not(:disabled) { background: #f08c00; }
+        .btn-gray { background: #e5e5ea; color: #1d1d1f; }
+        .btn-gray:hover:not(:disabled) { background: #d1d1d6; }
+        .btn-green { background: #34c759; color: #ffffff; font-weight: 600; font-size: 13px; padding: 8px 16px;}
+        .btn-green:hover:not(:disabled) { background: #28a745; }
+        .btn-red { background: #ff3b30; color: #ffffff; }
+        .btn-red:hover:not(:disabled) { background: #d72c21; }
+
+        /* 搜尋與篩選列 */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .search-bar input { flex: 1; min-width: 180px; }
+
+        /* 架上統計與實時連線狀態 */
+        .summary-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .summary-badge {
+            background: #f5f5f7;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: #515154;
+            border: 1px solid #e5e5ea;
+        }
+        .summary-badge strong { color: #ff3b30; }
+        
+        .sync-badge {
+            font-size: 11px;
+            color: #34c759;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #34c759;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        /* 商品展示網格 */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .product-card {
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 10px;
+            padding: 14px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            border-color: #c5c5ca;
+        }
+        .tag-group { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+        .tag {
+            font-size: 10px; 
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .tag-brand { background: #f2f2f7; color: #636366; }
+        .tag-level { background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; }
+        .tag-type { background: #e3faf2; color: #0ca678; border: 1px solid #96f2d7; }
+        .tag-store { background: #e8f4fd; color: #1d72b8; }
+
+        .product-title { font-size: 14px; font-weight: 700; margin: 3px 0 6px; color: #1d1d1f; }
+        .product-specs { font-size: 11px; color: #86868b; line-height: 1.5; margin-bottom: 10px; }
+        
+        .imei-display {
+            font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background: #f5f5f7;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #1d1d1f;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        .product-price { font-size: 18px; font-weight: 700; color: #ff3b30; margin-bottom: 8px; }
+        
+        /* 浮動購物車按鈕 */
+        .floating-cart {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #1d1d1f;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 40px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: transform 0.2s, background 0.2s;
+            z-index: 1000;
+        }
+        .floating-cart:hover { transform: scale(1.05); background: #000000; }
+        .cart-badge {
+            background: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        /* 彈窗基本樣式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #ffffff;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+            overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e5ea; padding-bottom: 10px; margin-bottom: 12px; }
+        .modal-header h2 { margin: 0; font-size: 16px; }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f7;
+            font-size: 12px;
+        }
+        .cart-item-info { flex: 1; }
+        .cart-item-title { font-weight: 600; }
+        .cart-item-imei { font-size: 11px; color: #86868b; }
+        .cart-item-price { font-weight: 600; color: #ff3b30; margin: 0 12px; }
+
+        .form-group { margin-top: 12px; }
+        .form-group label { display: block; font-size: 11px; font-weight: 600; color: #636366; margin-bottom: 6px; }
+        .form-group select { width: 100%; height: 36px; font-size: 13px; }
+
+        .modal-footer {
+            margin-top: 20px;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 12px;
+            text-align: right;
+        }
+        .total-text { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: block; }
+
+        /* 🍏 自定義非彈窗式訊息提示 (Toast Notification) */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(29, 29, 31, 0.95);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: auto;
+            border-left: 4px solid #34c759;
+            max-width: 320px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.error { border-left-color: #ff3b30; }
+        .toast.warning { border-left-color: #f59f00; }
+    </style>
+</head>
+<body>
+    <div id="toastContainer"></div>
+
+    <div class="container">
+        <div class="header-bar">
+            <div>
+                <h1>📱 D級出清品直購專區</h1>
+                <div class="sub-title">本區僅限販售「D級出清品」</div>
+            </div>
+            <div>
+                <button onclick="openAdminAuthModal()" class="admin-trigger-btn" id="adminTriggerBtn">
+                    ⚙️ 商家後台管理
+                </button>
+            </div>
+        </div>
+        
+        <div class="admin-panel" id="adminPanel">
+            <div style="background: #f1f3f5; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #495057; font-size: 12px;">🔗 GitHub 自動同步設定（首次使用請填寫，資料僅保存在此電腦中）</span>
+                    <button onclick="lockAdminPanel()" class="mac-btn btn-red" style="padding: 2px 8px; font-size: 10px;">🔒 登出並鎖定後台</button>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="ghUser" placeholder="GitHub 帳號名稱" style="width: 150px;">
+                    <input type="text" id="ghRepo" placeholder="Repo 專案名稱" style="width: 150px;">
+                    <input type="password" id="ghToken" placeholder="GitHub PAT Token 金鑰 (ghp_...)" style="flex: 1; min-width: 200px;">
+                    <button onclick="saveGitHubSettings()" class="mac-btn btn-blue" style="background: #228be6; color: #fff;">儲存設定</button>
+                </div>
+            </div>
+
+            <div class="admin-panel-flex">
+                <span>⚙️ <strong>目前已解鎖商家權限</strong>：匯入 Excel 篩選 D 級商品並實時同步至 GitHub</span>
+                <div>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="font-size: 11px;">
+                    <button onclick="handleFileRead()" class="mac-btn btn-blue" id="btnImportAndUpload">📥 1鍵匯入並上架到 GitHub</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="🔍 搜尋機型、品牌、IMEI碼...">
+            <select id="brandFilter" onchange="filterProducts()">
+                <option value="">所有品牌</option>
+            </select>
+            <select id="storeFilter" onchange="filterProducts()">
+                <option value="">所有門市</option>
+            </select>
+        </div>
+
+        <div class="summary-bar">
+            <div class="summary-badge">目前架上特惠商品：<strong id="totalOnSale">0</strong> 件</div>
+            <div class="sync-badge">
+                <span class="sync-dot"></span>
+                <span>即時同步連線中</span>
+            </div>
+        </div>
+
+        <div id="productGrid" class="product-grid"></div>
+    </div>
+
+    <div class="floating-cart" onclick="openCartModal()">
+        <span>🛒 購物車</span>
+        <div class="cart-badge" id="cartCount">0</div>
+    </div>
+
+    <div class="modal-overlay" id="adminAuthModal">
+        <div class="modal-content" style="max-width: 350px;">
+            <div class="modal-header">
+                <h2>🔐 解鎖商家管理後台</h2>
+                <button class="mac-btn btn-gray" style="width: auto; padding: 2px 6px;" onclick="closeAdminAuthModal()">✕</button>
+            </div>
+            <div style="padding: 10px 0;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #636366;">請輸入商家管理密碼：</label>
+                <input type="password" id="adminPasswordInput" placeholder="請輸入密碼 (預設為 8888)" style="width: 100%; font-size: 14px; padding: 8px;">
+            </div>
+            <div class="modal-footer" style="margin-top: 10px; padding-top: 10px;">
+                <button class="mac-btn btn-gray" onclick="closeAdminAuthModal()">取消</button>
+                <button class="mac-btn btn-blue" onclick="verifyAdminPassword()">驗證登入</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛍️ 確認選購商品與送出訂單</h2>
+                <button class="mac-btn btn-gray" style="width: auto; height: auto; padding: 2px 6px;" onclick="closeCartModal()">✕</button>
+            </div>
+            
+            <div id="cartItemsList"></div>
+
+            <span class="total-text" id="cartTotalText">總金額：$0</span>
+
+            <div style="background: #f5f5f7; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                <h3 style="margin: 0 0 4px; font-size: 12px;">🏢 選擇取貨門市</h3>
+                <div class="form-group" style="margin-top: 6px;">
+                    <label>指定取貨門市 / 買家所屬門市 *</label>
+                    <select id="custStore">
+                        <option value="" disabled selected>-- 請選擇門市 --</option>
+                        <option value="台北光華">台北光華</option>
+                        <option value="桃園站前">桃園站前</option>
+                        <option value="桃園NOVA">桃園NOVA</option>
+                        <option value="中壢旗艦">中壢旗艦</option>
+                        <option value="中壢站前">中壢站前</option>
+                        <option value="中壢NOVA">中壢NOVA</option>
+                        <option value="新竹站前">新竹站前</option>
+                        <option value="台中站前">台中站前</option>
+                        <option value="台中NOVA">台中NOVA</option>
+                        <option value="東海NOVA">東海NOVA</option>
+                        <option value="台南彩虹3C">台南彩虹3C</option>
+                        <option value="高雄NOVA">高雄NOVA</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="mac-btn btn-gray" style="width: auto;" onclick="closeCartModal()">繼續瀏覽</button>
+                <button class="mac-btn btn-green" style="width: auto;" onclick="checkoutAndGenerateOrder()">✅ 送出訂單並下載抓貨單</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ==================================================================
+    // ⚠️ 核心商品資料區（前後標記確保正則匹配精確，更新時不會影響其他代碼） ⚠️
+    // ==================================================================
+    // ===DATA_START===
+    let filteredProducts = [];
+    // ===DATA_END===
+    // ==================================================================
+
+    // ==================================================================
+    // 🔗 Google 表單對接設定
+    // ==================================================================
+    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
+    const FIELD_STORE = "entry.622983435";       // 指定取貨門市
+    const FIELD_ITEMS = "entry.732769472";       // 購買商品明細
+    const FIELD_PRICE = "entry.570634756";       // 總金額
+    const FIELD_DATE = "entry.112740061";        // 下單時間
+    // ==================================================================
+
+    let cart = [];
+
+    window.onload = function() {
+        loadGitHubSettings();
+        checkLocalLoginState(); 
+        cleanSoldProducts();
+        renderProducts(filteredProducts);
+        updateFilters();
+
+        document.getElementById('adminPasswordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { verifyAdminPassword(); }
+        });
+    };
+
+    // 🍎 自定義 Toast 提示
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = message;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 4000);
+    }
+
+    // 🔑 商家密碼解鎖彈窗控制
+    function openAdminAuthModal() {
+        const panel = document.getElementById('adminPanel');
+        if (localStorage.getItem('admin_logged_in') === 'true') {
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        } else {
+            document.getElementById('adminAuthModal').style.display = 'flex';
+            document.getElementById('adminPasswordInput').focus();
+        }
+    }
+
+    function closeAdminAuthModal() {
+        document.getElementById('adminAuthModal').style.display = 'none';
+        document.getElementById('adminPasswordInput').value = '';
+    }
+
+    // 驗證管理員密碼
+    function verifyAdminPassword() {
+        const pass = document.getElementById('adminPasswordInput').value;
+        if (pass === '8888') {
+            localStorage.setItem('admin_logged_in', 'true'); 
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminTriggerBtn').innerText = "⚙️ 關閉後台面板";
+            closeAdminAuthModal();
+            showToast('🔓 商家管理權限驗證成功，後台已解鎖！', 'success');
+        } else {
+            showToast('❌ 密碼錯誤，請重新輸入！', 'error');
+        }
+    }
+
+    // 檢查本機登入狀態
+    function checkLocalLoginState() {
+        if (localStorage.getItem('admin_logged_in') === 'true') {
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminTriggerBtn').innerText = "⚙️ 關閉後台面板";
+        }
+    }
+
+    // 🔒 安全登出與鎖定後台
+    function lockAdminPanel() {
+        localStorage.removeItem('admin_logged_in');
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('adminTriggerBtn').innerText = "⚙️ 商家後台管理";
+        showToast('🔒 商家後台已成功登出並鎖定！', 'warning');
+    }
+
+    function cleanSoldProducts() {
+        const soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        if (soldImeis.length > 0) {
+            filteredProducts = filteredProducts.filter(p => !soldImeis.includes(p.imei));
+        }
+    }
+
+    // 儲存與讀取 GitHub 金鑰設定
+    function saveGitHubSettings() {
+        const user = document.getElementById('ghUser').value.trim();
+        const repo = document.getElementById('ghRepo').value.trim();
+        const token = document.getElementById('ghToken').value.trim();
+        
+        if (!user || !repo || !token) { 
+            showToast('⚠️ 請完整填寫 GitHub 設定欄位！', 'warning'); 
+            return; 
+        }
+        
+        localStorage.setItem('gh_user', user);
+        localStorage.setItem('gh_repo', repo);
+        localStorage.setItem('gh_token', token);
+        showToast('💾 GitHub 連線設定已保存在本機瀏覽器！', 'success');
+    }
+
+    function loadGitHubSettings() {
+        document.getElementById('ghUser').value = localStorage.getItem('gh_user') || '';
+        document.getElementById('ghRepo').value = localStorage.getItem('gh_repo') || '';
+        document.getElementById('ghToken').value = localStorage.getItem('gh_token') || '';
+    }
+
+    // 1. 讀取並篩選 Excel 檔案
+    function handleFileRead() {
+        const fileInput = document.getElementById('excelFileInput');
+        if (!fileInput.files[0]) { 
+            showToast('⚠️ 請先選擇庫存 Excel 檔案！', 'warning'); 
+            return; 
+        }
+        
+        const user = localStorage.getItem('gh_user');
+        const repo = localStorage.getItem('gh_repo');
+        const token = localStorage.getItem('gh_token');
+        if (!user || !repo || !token) {
+            showToast('❌ 尚未儲存 GitHub 自動同步設定！請先完成設定。', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnImportAndUpload');
+        btn.disabled = true;
+        btn.innerText = "⏳ 正在解析 Excel 庫存...";
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { range: 1 });
+                
+                let parsedList = [];
+
+                jsonData.forEach(item => {
+                    const type = (item['類型'] || item['Type'] || '').toString().trim();
+                    const level = (item['等級'] || item['Level'] || '').toString().trim();
+                    
+                    let price = parseFloat(item['設定售價'] || item['售價'] || item['價格'] || 0);
+                    if (isNaN(price)) { price = 0; }
+
+                    if (type === '出清品' || level === 'D級') {
+                        parsedList.push({
+                            store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(),
+                            brand: (item['品牌'] || '其他').toString().trim(),
+                            model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(),
+                            level: level || '-',
+                            type: type || '-',
+                            subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(),
+                            battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(),
+                            version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
+                            imei: (item['IMEI'] || item['序號'] || '').toString().trim(),
+                            originalImei: (item['原始IMEI'] || item['原始序號'] || '-').toString().trim(),
+                            tradeInModel: (item['換購機款'] || '-').toString().trim(),
+                            note: (item['說明'] || '-').toString().trim(),
+                            vendor: (item['回收廠商'] || '-').toString().trim(),
+                            price: price
+                        });
+                    }
+                });
+
+                if (parsedList.length === 0) {
+                    showToast('⚠️ 未偵測到符合「出清品」或「D級」的商品！請確認 Excel 內容。', 'warning');
+                    btn.disabled = false;
+                    btn.innerText = "📥 1鍵匯入並上架到 GitHub";
+                    return;
+                }
+
+                // 更新本機變數
+                filteredProducts = parsedList;
+
+                // 清除本地已售出記錄並渲染
+                localStorage.removeItem('sold_products');
+                renderProducts(filteredProducts);
+                updateFilters();
+
+                // 推送到 GitHub
+                pushNewDataToGitHub(user, repo, token);
+            } catch (err) {
+                console.error(err);
+                showToast('❌ 解析 Excel 失敗，請確認檔案格式是否正確。', 'error');
+                btn.disabled = false;
+                btn.innerText = "📥 1鍵匯入並上架到 GitHub";
+            }
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+
+    // 🚀【優化版】向 GitHub 推送更新（加入自動防衝突重試機制）
+    async function pushNewDataToGitHub(user, repo, token) {
+        const btn = document.getElementById('btnImportAndUpload');
+        btn.disabled = true;
+        btn.innerText = "⏳ 正在與 GitHub 連線同步...";
+
+        const filePath = "index.html"; 
+        const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/${filePath}`;
+        const maxRetries = 3;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // 1. 取得最新檔案內容與當前 SHA
+                const getRes = await fetch(apiUrl, {
+                    headers: { "Authorization": `token ${token}`, "Cache-Control": "no-cache" }
+                });
+                if (!getRes.ok) throw new Error("讀取 GitHub 檔案失敗，請檢查權限及專案名稱。");
+                
+                const fileData = await getRes.json();
+                const currentSha = fileData.sha;
+                const currentHtml = decodeURIComponent(escape(atob(fileData.content)));
+
+                // 2. 使用穩固的前後 Anchors 來尋找並取代代碼
+                const startTag = "// ===DATA_START===";
+                const endTag = "// ===DATA_END===";
+                const startIndex = currentHtml.indexOf(startTag);
+                const endIndex = currentHtml.indexOf(endTag);
+
+                if (startIndex === -1 || endIndex === -1) {
+                    throw new Error("找不到檔案中的商品資料區塊標記（// ===DATA_START===），請確認 HTML 沒有被手動篡改過！");
+                }
+
+                const replacement = `${startTag}\n    let filteredProducts = ${JSON.stringify(filteredProducts, null, 8)};\n    ${endTag}`;
+                const updatedHtml = currentHtml.substring(0, startIndex) + replacement + currentHtml.substring(endIndex + endTag.length);
+
+                const encodedContent = btoa(unescape(encodeURIComponent(updatedHtml)));
+                
+                // 3. 提交寫入 GitHub
+                const putRes = await fetch(apiUrl, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `🔄 實時庫存自動上架 (共 ${filteredProducts.length} 筆商品)`,
+                        content: encodedContent,
+                        sha: currentSha
+                    })
+                });
+
+                if (putRes.status === 409) {
+                    console.warn(`[嘗試 ${attempt}] 遭遇衝突 (409 SHA conflict)，正在重新獲取 SHA 並嘗試...`);
+                    if (attempt === maxRetries) throw new Error("同步發生衝突，請稍後再試一次！");
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // 遞增式等待重試
+                    continue; 
+                }
+
+                if (!putRes.ok) throw new Error("向 GitHub 寫入更新失敗！");
+
+                showToast(`🎉 實時同步成功！已上架 ${filteredProducts.length} 筆商品。請等 10-30 秒 GitHub 自動部署，所有人的前台即可看到最新庫存！`, 'success');
+                break; // 成功後跳出迴圈
+
+            } catch (error) {
+                console.error(error);
+                if (attempt === maxRetries) {
+                    showToast(`❌ 同步到 GitHub 失敗：\n${error.message}`, 'error');
+                }
+            }
+        }
+
+        btn.disabled = false;
+        btn.innerText = "📥 1鍵匯入並上架到 GitHub";
+    }
+
+    // 2. 動態生成商品卡片
+    function renderProducts(list) {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        
+        if (list.length === 0) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #86868b; padding: 30px;">目前架上無「D級出清品」商品。請點擊右上角商家後台匯入上架！</p>';
+            document.getElementById('totalOnSale').innerText = '0';
+            return;
+        }
+
+        document.getElementById('totalOnSale').innerText = list.length;
+
+        list.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            
+            let typeTagHTML = item.type !== '-' ? `<span class="tag tag-type">${item.type}</span>` : '';
+            let levelTagHTML = item.level !== '-' ? `<span class="tag tag-level">${item.level} 級</span>` : '';
+            const imeiHTML = item.imei ? `<span class="imei-display">${item.imei}</span>` : '無';
+
+            card.innerHTML = `
+                <div>
+                    <div class="tag-group">
+                        <span class="tag tag-brand">${item.brand}</span>
+                        ${levelTagHTML}
+                        ${typeTagHTML}
+                        <span class="tag tag-store">📍 ${item.store}</span>
+                    </div>
+                    <div class="product-title">${item.model}</div>
+                    <div class="product-specs">
+                        • 類別：${item.subCategory}<br>
+                        • 電池健康度：${item.battery}<br>
+                        • 版本：${item.version}<br>
+                        • IMEI / 序號：${imeiHTML}
+                    </div>
+                </div>
+                <div>
+                    <div class="product-price">$${item.price.toLocaleString()}</div>
+                    <button class="mac-btn btn-blue" style="width: 100%;" onclick="addToCart('${item.imei}')">＋ 放入購物車</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // 3. 更新篩選清單
+    function updateFilters() {
+        const brands = [...new Set(filteredProducts.map(p => p.brand))].filter(Boolean);
+        const stores = [...new Set(filteredProducts.map(p => p.store))].filter(Boolean);
+        
+        const brandSelect = document.getElementById('brandFilter');
+        brandSelect.innerHTML = '<option value="">所有品牌</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+        
+        const storeSelect = document.getElementById('storeFilter');
+        storeSelect.innerHTML = '<option value="">所有門市</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    // 4. 搜尋與條件篩選
+    function filterProducts() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const brand = document.getElementById('brandFilter').value;
+        const store = document.getElementById('storeFilter').value;
+
+        const filtered = filteredProducts.filter(item => {
+            const matchKeyword = item.model.toLowerCase().includes(keyword) || 
+                                 item.brand.toLowerCase().includes(keyword) || 
+                                 item.imei.toLowerCase().includes(keyword);
+            const matchBrand = !brand || item.brand === brand;
+            const matchStore = !store || item.store === store;
+            return matchKeyword && matchBrand && matchStore;
+        });
+
+        renderProducts(filtered);
+    }
+
+    // 5. 購物車操作
+    function addToCart(imei) {
+        const product = filteredProducts.find(p => p.imei === imei);
+        if (!product) return;
+        
+        if (cart.some(item => item.imei === imei)) {
+            showToast('⚠️ 這項商品已經在您的購物車中了！', 'warning');
+            return;
+        }
+        
+        cart.push(product);
+        updateCartBadge();
+        showToast(`🛒 已將「${product.model}」放入購物車！`, 'success');
+    }
+
+    function removeFromCart(imei) {
+        cart = cart.filter(item => item.imei !== imei);
+        updateCartBadge();
+        renderCartItems();
+        showToast('已自購物車中移除商品', 'warning');
+    }
+
+    function updateCartBadge() {
+        document.getElementById('cartCount').innerText = cart.length;
+    }
+
+    function openCartModal() {
+        renderCartItems();
+        document.getElementById('cartModal').style.display = 'flex';
+    }
+
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function renderCartItems() {
+        const container = document.getElementById('cartItemsList');
+        if (cart.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #86868b; padding: 15px 0;">您的購物車內目前沒有商品</p>';
+            document.getElementById('cartTotalText').innerText = '總金額：$0';
+            return;
+        }
+
+        let total = 0;
+        container.innerHTML = cart.map(item => {
+            total += item.price;
+            return `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-title">${item.model}</div>
+                        <div class="cart-item-imei">
+                            IMEI: <span style="font-family: monospace; background:#f5f5f7; padding:1px 3px;">${item.imei}</span><br>
+                            門市: ${item.store} | 等級: ${item.level}
+                        </div>
+                    </div>
+                    <div class="cart-item-price">$${item.price.toLocaleString()}</div>
+                    <button class="mac-btn btn-gray" style="width: auto; padding: 2px 6px; font-size: 11px;" onclick="removeFromCart('${item.imei}')">移除</button>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('cartTotalText').innerText = `總金額：$${total.toLocaleString()}`;
+    }
+
+    // 6. 結帳送出訂單
+    function checkoutAndGenerateOrder() {
+        if (cart.length === 0) { 
+            showToast('⚠️ 購物車內沒有商品，無法送出！', 'warning'); 
+            return; 
+        }
+        
+        const store = document.getElementById('custStore').value;
+        if (!store) {
+            showToast('⚠️ 請選擇指定取貨門市！', 'warning');
+            return;
+        }
+
+        const orderDate = new Date().toLocaleString('zh-TW');
+        let totalPrice = 0;
+        const checkoutImeis = [];
+        let itemsSummaryArray = [];
+
+        cart.forEach(item => {
+            totalPrice += item.price;
+            checkoutImeis.push(item.imei);
+            
+            itemsSummaryArray.push(
+                `【${item.subCategory}】${item.brand} ${item.model} | ` +
+                `換購: ${item.tradeInModel} | ` +
+                `說明: ${item.note} | ` +
+                `回收商: ${item.vendor} | ` +
+                `IMEI: ${item.imei} | ` +
+                `原始IMEI: ${item.originalImei} | ` +
+                `等級: ${item.level} | ` +
+                `金額: $${item.price}`
+            );
+        });
+
+        const itemsSummaryString = itemsSummaryArray.join("\n"); 
+
+        // 🔄 步驟 1：傳送至 Google 表單
+        const formData = new URLSearchParams();
+        formData.append(FIELD_STORE, store);
+        formData.append(FIELD_ITEMS, itemsSummaryString);
+        formData.append(FIELD_PRICE, totalPrice);
+        formData.append(FIELD_DATE, orderDate);
+
+        fetch(GOOGLE_FORM_SUBMIT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+        }).then(() => {
+            console.log("訂單已成功傳送至 Google 試算表！");
+        }).catch(err => {
+            console.error("背景傳送錯誤：", err);
+        });
+
+        // 🔄 步驟 2：本地前台自動下架
+        filteredProducts = filteredProducts.filter(p => !checkoutImeis.includes(p.imei));
+
+        let soldImeis = JSON.parse(localStorage.getItem('sold_products') || '[]');
+        soldImeis = soldImeis.concat(checkoutImeis);
+        localStorage.setItem('sold_products', JSON.stringify(soldImeis));
+
+        renderProducts(filteredProducts);
+        updateFilters();
+
+        // 🔄 步驟 3：下載 Excel 抓貨單
+        const orderRows = [
+            ['【D級出清品專區 - 抓貨通知單】'],
+            ['下載日期：', orderDate],
+            ['指定門市：', store],
+            [''], 
+            ['商品所在門市', '品牌', '購買型號', '產品等級', '產品類型', '電池健康度', 'IMEI序號', '出清金額']
+        ];
+
+        cart.forEach(item => {
+            orderRows.push([
+                item.store,
+                item.brand,
+                item.model,
+                item.level,
+                item.type,
+                item.battery,
+                item.imei,
+                item.price
+            ]);
+        });
+        
+        orderRows.push(['', '', '', '', '', '', '總成交金額：', totalPrice]);
+
+        const ws = XLSX.utils.aoa_to_sheet(orderRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "抓貨明細");
+        
+        const fileName = `特惠抓貨單_${store}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        showToast(`🎉 訂單送出成功！\n1. 商品已自前台下架\n2. 訂單已傳至雲端試算表\n3. 已下載抓貨單：${fileName}`, 'success');
+
+        // 清空購物車
+        cart = [];
+        updateCartBadge();
+        closeCartModal();
+        document.getElementById('custStore').value = ''; 
+    }
+    </script>
+</body>
+</html>
