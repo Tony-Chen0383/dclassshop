@@ -17,14 +17,14 @@
             --blue: #007aff;
             --blue-hover: #0062cc;
             
-            /* Light Theme */
-            --bg-body: #e5e5ea; 
+            /* Light Theme - 🌟 強化對比版本 */
+            --bg-body: #e5e5ea; /* 加深底板灰色，增強與純白卡片的對比 */
             --bg-card: #ffffff; 
             --bg-header: rgba(255, 255, 255, 0.85);
             --bg-input: #ffffff;
             --text-main: #1d1d1f;
             --text-muted: #86868b;
-            --border-light: rgba(0,0,0,0.12); 
+            --border-light: rgba(0,0,0,0.12); /* 加深預設邊框 */
             --shadow-card: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
             --shadow-hover: 0 0 0 1px var(--blue), 0 12px 28px rgba(0,122,255,0.15), 0 4px 12px rgba(0,0,0,0.08);
             --tag-brand-bg: #f2f2f7;
@@ -34,14 +34,14 @@
         }
 
         [data-theme="dark"] {
-            /* Dark Theme */
-            --bg-body: #000000; 
-            --bg-card: #1c1c1e; 
+            /* Dark Theme - 🌟 強化對比版本 */
+            --bg-body: #000000; /* 純黑底板 */
+            --bg-card: #1c1c1e; /* 深灰卡片 */
             --bg-header: rgba(28, 28, 30, 0.85);
             --bg-input: #2c2c2e;
             --text-main: #f5f5f7;
             --text-muted: #98989d;
-            --border-light: rgba(255,255,255,0.15); 
+            --border-light: rgba(255,255,255,0.15); /* 更明顯的白線邊框 */
             --shadow-card: 0 4px 16px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3);
             --shadow-hover: 0 0 0 1px var(--blue), 0 12px 28px rgba(10,132,255,0.25), 0 4px 12px rgba(0,0,0,0.5);
             --tag-brand-bg: #2c2c2e;
@@ -49,7 +49,7 @@
             --blue-hover: #007aff;
         }
 
-        /* 全域美化捲軸 */
+        /* 全域美化捲軸 (Apple 風格 Scrollbar) */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(134, 134, 139, 0.4); border-radius: 6px; }
@@ -192,7 +192,6 @@
             height: var(--h-std); font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; border: none;
             transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), background-color var(--transition-ease), opacity 0.2s;
         }
-        /* 🌟 小按鈕統一風格 */
         .btn-sm {
             height: 32px !important;
             font-size: 13px !important;
@@ -223,23 +222,18 @@
             .admin-panel { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 350px; }
         }
 
-        /* 🌟 拖曳上傳區塊樣式 */
         .custom-file-upload {
             display: flex; gap: 8px; align-items: center; margin-bottom: 12px; 
             background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); 
-            border: 1px dashed var(--text-muted); /* 虛線提示可拖曳 */
+            border: 1px dashed var(--text-muted); 
             transition: all 0.2s ease;
         }
         .custom-file-upload.drag-over {
             border-color: var(--blue);
             background-color: rgba(0, 122, 255, 0.1);
         }
-        .custom-file-upload label { 
-            height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; flex-shrink: 0; margin: 0; 
-        }
-        .custom-file-upload span { 
-            font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; 
-        }
+        .custom-file-upload label { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; flex-shrink: 0; margin: 0; }
+        .custom-file-upload span { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
         /* ==================================================================
            🖼️ 6. 商品卡與虛擬滾動排版 (固定 5 欄)
@@ -324,6 +318,7 @@
         .cart-item:last-child { border-bottom: none; }
         .cart-item-title { font-weight: 800; font-size: 16px; margin-bottom: 6px; color: var(--text-main); } 
         .cart-item-imei { font-size: 14px; color: var(--text-main); line-height: 1.5; }
+        .cart-drawer .imei-display { font-size: 14px; padding: 3px 6px; }
 
         .custom-select-container { position: relative; width: 100%; }
         .custom-select-trigger {
@@ -342,7 +337,7 @@
         .custom-select-container.open .custom-select-trigger::after { transform: rotate(180deg); }
 
         .custom-select-options {
-            visibility: hidden; opacity: 0; transform: scale(0.95) translateY(5px); transform-origin: bottom center;
+            visibility: hidden; opacity: 0; transform: scale(0.95) translateY(-5px); transform-origin: bottom center;
             transition: var(--transition-spring); pointer-events: none;
             position: absolute; bottom: calc(var(--h-std) + 6px); left: 0; 
             background: var(--bg-card); 
@@ -430,7 +425,6 @@
         <div class="admin-panel" id="adminPanel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
                 <h3 style="margin: 0; font-size: 16px; color: var(--text-main);">⚙️ 商家後台管理</h3>
-                <!-- 🌟 套用 btn-sm 小按鈕風格 -->
                 <button onclick="lockAdminPanel()" class="mac-btn btn-red btn-sm">🔒 鎖定</button>
             </div>
             
@@ -441,11 +435,10 @@
                     <span style="line-height: 32px; color: var(--text-muted);">至</span>
                     <input type="date" id="exportEndDate" style="flex:1; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); background: var(--bg-card); color: var(--text-main);">
                 </div>
-                <!-- 🌟 套用 btn-sm 小按鈕風格 -->
                 <button onclick="downloadOrdersOnlyNameAndImei()" class="mac-btn btn-orange btn-sm" style="width: 100%;">下載報表</button>
             </div>
 
-            <!-- 🌟 支援拖曳上傳的檔案區域 -->
+            <!-- 支援拖曳上傳的檔案區域 -->
             <div style="border-top: 1px solid var(--border-light); padding-top: 16px;">
                 <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">📥 覆蓋雲端庫存</label>
                 
@@ -455,7 +448,6 @@
                     <span id="fileNameDisplay">未選擇檔案，或將檔案拖放至此</span>
                 </div>
 
-                <!-- 🌟 套用 btn-sm 小按鈕風格 -->
                 <button onclick="handleFileRead()" class="mac-btn btn-blue btn-sm" id="btnImportAndUpload" style="width: 100%;">1鍵匯入並覆蓋</button>
             </div>
         </div>
@@ -504,7 +496,6 @@
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px;">下單門市 *</label>
                 
-                <!-- 🌟 自訂下單門市單選選單 -->
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
                     <div class="custom-select-options" id="storeSelectOptions">
@@ -536,7 +527,7 @@
     const SUPABASE_ANON_KEY = "sb_publishable_nv67PTR3o6_v2KPuFbBpbg_FPiN1IyR";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
+    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435", FIELD_CAT = "entry.570634756", FIELD_MODEL = "entry.732769472", FIELD_IMEI = "entry.112740061";        
 
     let allProducts = [], cart = [], filteredProductsCache = [];
@@ -558,8 +549,6 @@
         });
         document.addEventListener('click', closeAllDropdowns);
         setupIntersectionObserver();
-        
-        // 🌟 初始化拖曳上傳監聽器
         setupDragAndDrop();
     };
 
@@ -710,6 +699,7 @@
         }
     }
 
+    // 門市單選切換
     function selectStore(storeName, event) {
         event.stopPropagation();
         document.getElementById('custStore').value = storeName;
@@ -955,11 +945,23 @@
         try {
             const { data: existingProducts, error: checkError } = await _supabase.from('products').select('imei').in('imei', checkoutImeis);
             if (checkError) throw checkError;
+            
+            // 🌟 核心防呆重置優化：若長度不符，代表有商品已被搶先買走
             if (existingProducts.length !== cart.length) {
                 const existingImeis = existingProducts.map(p => p.imei);
-                allProducts = allProducts.filter(p => existingImeis.includes(p.imei));
-                showToast('❌ 結帳失敗！部分商品已被買走，請重新確認', 'error');
-                resetPaginationAndFilter(); toggleCartDrawer(); return; 
+                const soldOutItems = cart.filter(item => !existingImeis.includes(item.imei));
+                let msg = '❌ 結帳失敗！以下商品已被買走，網頁將自動重新載入庫存：\n';
+                soldOutItems.forEach(item => msg += `- ${item.model}\n`);
+                showToast(msg, 'error');
+                
+                // 1. 清空購物車
+                cart = []; 
+                document.getElementById('cartCount').innerText = 0; 
+                toggleCartDrawer(); 
+                
+                // 2. 自動向雲端撈取最新狀態，全面更新快取與商品網格
+                fetchProductsFromSupabase(); 
+                return; 
             }
         } catch (err) { showToast("⚠️ 連線失敗！", "error"); return; }
 
