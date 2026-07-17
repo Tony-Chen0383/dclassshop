@@ -11,20 +11,20 @@
            🍎 1. 全域樣式與深色模式變數 (CSS Variables)
            ================================================================== */
         :root {
-            --radius-sm: 8px;
-            --radius-lg: 12px;
+            --radius-sm: 8px; 
+            --radius-lg: 12px; 
             --h-std: 40px; 
             --blue: #007aff;
             --blue-hover: #0062cc;
             
-            /* Light Theme - 🌟 強化對比版本 */
-            --bg-body: #e5e5ea; /* 加深底板灰色，增強與純白卡片的對比 */
+            /* Light Theme */
+            --bg-body: #e5e5ea; 
             --bg-card: #ffffff; 
             --bg-header: rgba(255, 255, 255, 0.85);
             --bg-input: #ffffff;
             --text-main: #1d1d1f;
             --text-muted: #86868b;
-            --border-light: rgba(0,0,0,0.12); /* 加深預設邊框 */
+            --border-light: rgba(0,0,0,0.12); 
             --shadow-card: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
             --shadow-hover: 0 0 0 1px var(--blue), 0 12px 28px rgba(0,122,255,0.15), 0 4px 12px rgba(0,0,0,0.08);
             --tag-brand-bg: #f2f2f7;
@@ -34,14 +34,14 @@
         }
 
         [data-theme="dark"] {
-            /* Dark Theme - 🌟 強化對比版本 */
-            --bg-body: #000000; /* 純黑底板 */
-            --bg-card: #1c1c1e; /* 深灰卡片 */
+            /* Dark Theme */
+            --bg-body: #000000; 
+            --bg-card: #1c1c1e; 
             --bg-header: rgba(28, 28, 30, 0.85);
             --bg-input: #2c2c2e;
             --text-main: #f5f5f7;
             --text-muted: #98989d;
-            --border-light: rgba(255,255,255,0.15); /* 更明顯的白線邊框 */
+            --border-light: rgba(255,255,255,0.15); 
             --shadow-card: 0 4px 16px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3);
             --shadow-hover: 0 0 0 1px var(--blue), 0 12px 28px rgba(10,132,255,0.25), 0 4px 12px rgba(0,0,0,0.5);
             --tag-brand-bg: #2c2c2e;
@@ -49,7 +49,7 @@
             --blue-hover: #007aff;
         }
 
-        /* 全域美化捲軸 (Apple 風格 Scrollbar) */
+        /* 全域美化捲軸 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(134, 134, 139, 0.4); border-radius: 6px; }
@@ -103,8 +103,15 @@
             margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
         }
 
-        h1 { font-size: 24px; color: var(--text-main); margin: 0; font-weight: 700; letter-spacing: -0.02em; }
-        .sub-title { color: var(--text-muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
+        /* 標題區塊可點擊 */
+        .title-group {
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+        .title-group:active { opacity: 0.6; }
+        .title-group h1 { font-size: 24px; color: var(--text-main); margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+        .title-group .sub-title { color: var(--text-muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
 
         .header-actions { display: flex; gap: 10px; align-items: center; }
 
@@ -197,7 +204,6 @@
             font-size: 13px !important;
             padding: 0 12px !important;
         }
-
         .mac-btn:active:not(:disabled) { transform: scale(0.96); }
         .btn-blue { background: var(--blue); color: #ffffff; }
         .btn-blue:hover:not(:disabled) { background: var(--blue-hover); }
@@ -236,7 +242,7 @@
         .custom-file-upload span { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
         /* ==================================================================
-           🖼️ 6. 商品卡與虛擬滾動排版 (固定 5 欄)
+           🖼️ 6. 商品卡與虛擬滾動排版
            ================================================================== */
         .product-grid { 
             display: grid; 
@@ -318,7 +324,6 @@
         .cart-item:last-child { border-bottom: none; }
         .cart-item-title { font-weight: 800; font-size: 16px; margin-bottom: 6px; color: var(--text-main); } 
         .cart-item-imei { font-size: 14px; color: var(--text-main); line-height: 1.5; }
-        .cart-drawer .imei-display { font-size: 14px; padding: 3px 6px; }
 
         .custom-select-container { position: relative; width: 100%; }
         .custom-select-trigger {
@@ -337,7 +342,7 @@
         .custom-select-container.open .custom-select-trigger::after { transform: rotate(180deg); }
 
         .custom-select-options {
-            visibility: hidden; opacity: 0; transform: scale(0.95) translateY(-5px); transform-origin: bottom center;
+            visibility: hidden; opacity: 0; transform: scale(0.95) translateY(5px); transform-origin: bottom center;
             transition: var(--transition-spring); pointer-events: none;
             position: absolute; bottom: calc(var(--h-std) + 6px); left: 0; 
             background: var(--bg-card); 
@@ -375,9 +380,10 @@
         <!-- 📌 吸頂區域包含 Header, 搜尋列, Tag區 與 商品數量狀態 -->
         <div class="sticky-wrapper">
             <div class="header-bar">
-                <div>
+                <!-- 🌟 點擊大標題重新整理功能 -->
+                <div class="title-group" onclick="refreshToLatest()" title="點擊重新整理最新庫存">
                     <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">☁️ 企業雲端版</span></h1>
-                    <div class="sub-title">本區僅限販售「D級出清品」，營運部-Tony 專屬管理</div>
+                    <div class="sub-title">本區僅限販售「D級出清品」，有任何問題請洽營運部-Tony</div>
                 </div>
                 <div class="header-actions">
                     <button class="mac-btn btn-gray btn-icon" id="themeToggle" onclick="toggleTheme()" title="切換深/淺色模式">🌙</button>
@@ -421,7 +427,7 @@
             </div>
         </div>
         
-        <!-- ⚙️ 後台面板 (固定於左上角的 Floating Widget) -->
+        <!-- ⚙️ 後台面板 -->
         <div class="admin-panel" id="adminPanel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
                 <h3 style="margin: 0; font-size: 16px; color: var(--text-main);">⚙️ 商家後台管理</h3>
@@ -496,6 +502,7 @@
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px;">下單門市 *</label>
                 
+                <!-- 🌟 自訂下單門市單選選單 -->
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
                     <div class="custom-select-options" id="storeSelectOptions">
@@ -527,7 +534,7 @@
     const SUPABASE_ANON_KEY = "sb_publishable_nv67PTR3o6_v2KPuFbBpbg_FPiN1IyR";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttJEuI3EHQFr_7cA/formResponse";
+    const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435", FIELD_CAT = "entry.570634756", FIELD_MODEL = "entry.732769472", FIELD_IMEI = "entry.112740061";        
 
     let allProducts = [], cart = [], filteredProductsCache = [];
@@ -562,7 +569,6 @@
         setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
     }
 
-    // 更新檔案上傳顯示的檔名
     function updateFileName(inputElement) {
         const display = document.getElementById('fileNameDisplay');
         if (inputElement.files && inputElement.files.length > 0) {
@@ -627,8 +633,14 @@
     }
 
     /* -----------------------------------------------------------
-       🚀 篩選條件 localStorage & 標籤顯示區 (Active Filters)
+       🚀 點擊大標題重新整理 & 篩選條件 localStorage 
        ----------------------------------------------------------- */
+    // 🌟 全面重新同步並獲取最新資料
+    function refreshToLatest() {
+        showToast("🔄 正在重新同步最新雲端庫存...", "success");
+        fetchProductsFromSupabase();
+    }
+
     function saveFiltersToLocal() {
         localStorage.setItem('savedBrands', JSON.stringify(selectedBrands));
         localStorage.setItem('savedSubCats', JSON.stringify(selectedSubCategories));
@@ -699,7 +711,6 @@
         }
     }
 
-    // 門市單選切換
     function selectStore(storeName, event) {
         event.stopPropagation();
         document.getElementById('custStore').value = storeName;
@@ -888,8 +899,10 @@
         try {
             const { data, error } = await _supabase.from('products').select('imei').eq('imei', imei).single();
             if (error || !data) {
-                showToast('❌ 商品剛已被買走！', 'error');
-                allProducts = allProducts.filter(p => p.imei !== imei); resetPaginationAndFilter(); return;
+                // 🌟 防呆：商品加入購物車前被買走，自動刷新
+                showToast('❌ 商品剛已被買走！系統將自動為您更新庫存', 'error');
+                fetchProductsFromSupabase(); 
+                return;
             }
         } catch (err) { showToast('⚠️ 連線失敗！', 'error'); return; }
         
@@ -946,12 +959,13 @@
             const { data: existingProducts, error: checkError } = await _supabase.from('products').select('imei').in('imei', checkoutImeis);
             if (checkError) throw checkError;
             
-            // 🌟 核心防呆重置優化：若長度不符，代表有商品已被搶先買走
+            // 🌟 核心防呆：結帳時發現庫存數量對不上（被搶走），清空購物車並自動刷新
             if (existingProducts.length !== cart.length) {
                 const existingImeis = existingProducts.map(p => p.imei);
                 const soldOutItems = cart.filter(item => !existingImeis.includes(item.imei));
-                let msg = '❌ 結帳失敗！以下商品已被買走，網頁將自動重新載入庫存：\n';
+                let msg = '❌ 結帳失敗！以下商品已被買走：\n';
                 soldOutItems.forEach(item => msg += `- ${item.model}\n`);
+                msg += '系統將為您自動重置為最新庫存狀態。';
                 showToast(msg, 'error');
                 
                 // 1. 清空購物車
@@ -959,8 +973,8 @@
                 document.getElementById('cartCount').innerText = 0; 
                 toggleCartDrawer(); 
                 
-                // 2. 自動向雲端撈取最新狀態，全面更新快取與商品網格
-                fetchProductsFromSupabase(); 
+                // 2. 自動刷新背景庫存 (維持當前過濾器)
+                refreshToLatest();
                 return; 
             }
         } catch (err) { showToast("⚠️ 連線失敗！", "error"); return; }
