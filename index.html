@@ -1148,13 +1148,18 @@
             const ws = XLSX.utils.aoa_to_sheet(orderRows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "下貨明細");
             XLSX.writeFile(wb, `出清下貨單_${selectedStore}_${new Date().toISOString().slice(0,10)}.xlsx`);
             
-            showToast(`🎉 訂單送出成功！`);
+            // 🌟 加入延遲自動重整機制
+            showToast(`🎉 訂單送出成功！系統將在 2 秒後自動重整...`);
             cart = []; document.getElementById('cartCount').innerText = 0; toggleCartDrawer(); 
             
             document.getElementById('custStore').value = ''; 
             document.getElementById('storeSelectTrigger').innerText = '-- 請選擇門市 --';
             document.getElementById('storeSelectTrigger').classList.remove('has-value');
             document.querySelectorAll('#storeSelectOptions .custom-select-item').forEach(i => i.classList.remove('selected'));
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
 
         } catch (err) { 
             showToast("⚠️ 連線或更新失敗！", "error"); 
