@@ -478,7 +478,6 @@
             
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">📋 導出歷史訂單 Excel</label>
-                <!-- 📱 防擠壓修復 -->
                 <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                     <input type="text" id="exportStartDate" class="custom-date-input" placeholder="開始日期" style="flex: 1; min-width: 0;">
                     <span style="color: var(--text-muted); font-size: 13px; flex-shrink: 0;">至</span>
@@ -1179,7 +1178,15 @@
                 
                 await fetch(GOOGLE_FORM_SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: formData }).catch(e => console.error(e));
                 
-                ordersToInsert.push({ store: selectedStore, model: item.model, imei: item.imei, repair_history: item.repair_history || '' });
+                // 🌟 將 version 與 screen_burn 新增至 orders
+                ordersToInsert.push({ 
+                    store: selectedStore, 
+                    model: item.model, 
+                    imei: item.imei, 
+                    version: item.version || '-',
+                    screen_burn: item.screen_burn || '-',
+                    repair_history: item.repair_history || '' 
+                });
             }
 
             const { error: orderError } = await _supabase.from('orders').insert(ordersToInsert);
@@ -1191,8 +1198,11 @@
             allProducts = allProducts.filter(p => !checkoutImeis.includes(p.imei));
             resetPaginationAndFilter();
 
-            const orderRows = [['【D級出清品專區 - 抓貨通知單】'], ['下載日期：', orderDate], ['指定門市：', selectedStore], [''], ['商品門市', '品牌', '品名', '等級', '電池', 'IMEI / SN', '維修歷程']];
-            cart.forEach(item => { orderRows.push([item.store, item.brand, item.model, item.level, item.battery, item.imei, item.repair_history || '無']); });
+            // 🌟 Excel 匯出：新增「國際版本」與「螢幕烙印」在維修歷程前面
+            const orderRows = [['【D級出清品專區 - 抓貨通知單】'], ['下載日期：', orderDate], ['指定門市：', selectedStore], [''], ['商品門市', '品牌', '品名', '等級', '電池', 'IMEI / SN', '國際版本', '螢幕烙印', '維修歷程']];
+            cart.forEach(item => { 
+                orderRows.push([item.store, item.brand, item.model, item.level, item.battery, item.imei, item.version || '-', item.screen_burn || '-', item.repair_history || '無']); 
+            });
             const ws = XLSX.utils.aoa_to_sheet(orderRows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "下貨明細");
             XLSX.writeFile(wb, `出清下貨單_${selectedStore}_${new Date().toISOString().slice(0,10)}.xlsx`);
             
@@ -1257,7 +1267,18 @@
                     let price = parseFloat(item['設定售價'] || item['售價'] || item['價格'] || 0); if (isNaN(price)) price = 0;
                     if (type === '出清品' || level === 'D級') {
                         parsedList.push({
-                            subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(), brand: (item['品牌'] || '其他').toString().trim(), model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(), imei: (item['IMEI'] || item['序號'] || '').toString().trim(), level: level || '-', store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(), price: price, type: type || '-', battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(), version: (item['國際版本'] || item['版本'] || '-').toString().trim()
+                            subCategory: (item['商品小類'] || item['小類'] || '-').toString().trim(), 
+                            brand: (item['品牌'] || '其他').toString().trim(), 
+                            model: (item['回收機款'] || item['機款'] || '未知型號').toString().trim(), 
+                            imei: (item['IMEI'] || item['序號'] || '').toString().trim(), 
+                            level: level || '-', 
+                            store: (item['所在門市'] || item['門市'] || '未註記').toString().trim(), 
+                            price: price, 
+                            type: type || '-', 
+                            battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(), 
+                            version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
+                            // 🌟 這裡新增抓取「螢幕烙印」的資料寫入 products 表格
+                            screen_burn: (item['螢幕烙印'] || item['烙印'] || '-').toString().trim()
                         });
                     }
                 });
@@ -1325,17 +1346,19 @@
 
     async function downloadOrdersOnlyNameAndImei() {
         try {
-            let query = _supabase.from('orders').select('created_at, store, model, imei, repair_history').order('created_at', { ascending: true });
+            // 🌟 匯出時一併拉取 version 與 screen_burn 資料
+            let query = _supabase.from('orders').select('created_at, store, model, imei, version, screen_burn, repair_history').order('created_at', { ascending: true });
             const startDate = document.getElementById('exportStartDate').value; const endDate = document.getElementById('exportEndDate').value;
             if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`); if (endDate) query = query.lte('created_at', `${endDate}T23:59:59.999`);
             const { data: orderList, error } = await query;
             if (error) throw error;
             if (!orderList || orderList.length === 0) { showToast("⚠️ 此區間內無訂單紀錄！", "warning"); return; }
             
-            const excelRows = [['下單時間', '指定門市', '品名', 'IMEI / SN', '維修歷程']];
+            // 🌟 修改標題與新增欄位在維修歷程前面
+            const excelRows = [['下單時間', '指定門市', '品名', 'IMEI / SN', '國際版本', '螢幕烙印', '維修歷程']];
             orderList.forEach(order => {
                 let formattedTime = '無紀錄'; if (order.created_at) formattedTime = new Date(order.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-                excelRows.push([formattedTime, order.store || '未註記', order.model || '未知型號', order.imei || '無', order.repair_history || '無']);
+                excelRows.push([formattedTime, order.store || '未註記', order.model || '未知型號', order.imei || '無', order.version || '-', order.screen_burn || '-', order.repair_history || '無']);
             });
             const ws = XLSX.utils.aoa_to_sheet(excelRows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "銷售出貨清單");
             const today = new Date().toISOString().slice(0, 10); let fileName = `歷史出貨報表_${today}.xlsx`;
