@@ -478,6 +478,7 @@
             
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">📋 導出歷史訂單 Excel</label>
+                <!-- 📱 防擠壓修復 -->
                 <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                     <input type="text" id="exportStartDate" class="custom-date-input" placeholder="開始日期" style="flex: 1; min-width: 0;">
                     <span style="color: var(--text-muted); font-size: 13px; flex-shrink: 0;">至</span>
@@ -799,7 +800,6 @@
         fetchProductsFromSupabase();
     }
 
-    // 🌟 更新：儲存與讀取維修篩選項
     function saveFiltersToLocal() {
         localStorage.setItem('savedBrands', JSON.stringify(selectedBrands));
         localStorage.setItem('savedSubCats', JSON.stringify(selectedSubCategories));
@@ -1036,6 +1036,7 @@
                     ${item.repair_history}
                  </div>` : '';
             
+            // 🌟 這裡新增呈現「國際版本」與「螢幕烙印」
             card.innerHTML = `
                 <div>
                     <div class="tag-group">
@@ -1047,6 +1048,8 @@
                     <div class="product-specs">
                         <span class="spec-label">小類：</span>${item.subCategory}<br>
                         <span class="spec-label">電池：</span>${item.battery}<br>
+                        <span class="spec-label">國際版本：</span>${item.version || '-'}<br>
+                        <span class="spec-label">螢幕烙印：</span>${item.screen_burn || '-'}<br>
                         <span class="spec-label">售價：</span><span style="color: #ff3b30; font-weight: 800; font-size: 16px;">$${Number(item.price || 0).toLocaleString()}</span><br>
                         <span class="spec-label">IMEI / SN：</span>${imeiHTML}
                     </div>
@@ -1134,7 +1137,6 @@
         const selectedStore = document.getElementById('custStore').value;
         if (!selectedStore) { showToast('⚠️ 請選擇下單門市！', 'warning'); return; }
         
-        // 🌟 在處理訂單與匯出前，強制將購物車內容依照「品名 (A-Z)」排序
         cart.sort((a, b) => (a.model || '').toString().localeCompare((b.model || '').toString(), 'zh-Hant'));
 
         const checkoutImeis = cart.map(item => item.imei);
@@ -1178,7 +1180,6 @@
                 
                 await fetch(GOOGLE_FORM_SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: formData }).catch(e => console.error(e));
                 
-                // 🌟 將 version 與 screen_burn 新增至 orders
                 ordersToInsert.push({ 
                     store: selectedStore, 
                     model: item.model, 
@@ -1198,7 +1199,6 @@
             allProducts = allProducts.filter(p => !checkoutImeis.includes(p.imei));
             resetPaginationAndFilter();
 
-            // 🌟 Excel 匯出：新增「國際版本」與「螢幕烙印」在維修歷程前面
             const orderRows = [['【D級出清品專區 - 抓貨通知單】'], ['下載日期：', orderDate], ['指定門市：', selectedStore], [''], ['商品門市', '品牌', '品名', '等級', '電池', 'IMEI / SN', '國際版本', '螢幕烙印', '維修歷程']];
             cart.forEach(item => { 
                 orderRows.push([item.store, item.brand, item.model, item.level, item.battery, item.imei, item.version || '-', item.screen_burn || '-', item.repair_history || '無']); 
@@ -1277,7 +1277,6 @@
                             type: type || '-', 
                             battery: (item['電池健康度'] || item['電池'] || '-').toString().trim(), 
                             version: (item['國際版本'] || item['版本'] || '-').toString().trim(),
-                            // 🌟 這裡新增抓取「螢幕烙印」的資料寫入 products 表格
                             screen_burn: (item['螢幕烙印'] || item['烙印'] || '-').toString().trim()
                         });
                     }
@@ -1346,7 +1345,6 @@
 
     async function downloadOrdersOnlyNameAndImei() {
         try {
-            // 🌟 匯出時一併拉取 version 與 screen_burn 資料
             let query = _supabase.from('orders').select('created_at, store, model, imei, version, screen_burn, repair_history').order('created_at', { ascending: true });
             const startDate = document.getElementById('exportStartDate').value; const endDate = document.getElementById('exportEndDate').value;
             if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`); if (endDate) query = query.lte('created_at', `${endDate}T23:59:59.999`);
@@ -1354,7 +1352,6 @@
             if (error) throw error;
             if (!orderList || orderList.length === 0) { showToast("⚠️ 此區間內無訂單紀錄！", "warning"); return; }
             
-            // 🌟 修改標題與新增欄位在維修歷程前面
             const excelRows = [['下單時間', '指定門市', '品名', 'IMEI / SN', '國際版本', '螢幕烙印', '維修歷程']];
             orderList.forEach(order => {
                 let formattedTime = '無紀錄'; if (order.created_at) formattedTime = new Date(order.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
