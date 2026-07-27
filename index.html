@@ -108,7 +108,6 @@
             border: 1px solid var(--border-light); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); 
         }
 
-        /* 🌟 重點修正：將左右 padding 改為極小的 2px，讓商品卡外側與上方 Header 完美等寬對齊 */
         .scroll-container {
             flex: 1; overflow-y: auto; overflow-x: hidden;
             padding-top: 10px; padding-left: 2px; padding-right: 2px; padding-bottom: 40px; min-height: 0; 
@@ -273,7 +272,7 @@
         .custom-file-upload span { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
         /* ==================================================================
-           🖼️ 7. 商品卡與虛擬滾動排版 (📱 加入響應式網格：一排至少三張)
+           🖼️ 7. 商品卡與虛擬滾動排版
            ================================================================== */
         .product-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
 
@@ -286,11 +285,9 @@
             .sticky-footer { flex-direction: column; align-items: stretch; }
             .sticky-footer > div:last-child { justify-content: flex-end; width: 100%; display: flex; }
             
-            /* 📱 強制手機版為 3 欄並縮小間距 */
             .product-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .product-card { padding: 10px; }
             
-            /* 📱 卡片內部排版極致緊湊化，以適應一排 3 張的小螢幕尺寸 */
             .tag-group { gap: 4px; margin-bottom: 8px; }
             .tag { font-size: 11px; padding: 2px 6px; }
             .product-title { font-size: 13px; margin: 2px 0 8px; line-height: 1.3; }
@@ -315,7 +312,6 @@
         .tag-level { background: #ff3b30; } 
         .tag-type { background: #34c759; } 
         
-        /* 📱 加入自動斷行 (word-break) 防護，避免長檔名撐破卡片 */
         .product-title { font-size: 16px; font-weight: 800; margin: 4px 0 14px; line-height: 1.45; word-break: break-word;}
         
         .product-specs { font-size: 15px; color: var(--text-main); line-height: 1.8; margin-bottom: 18px; border-top: 1px solid var(--border-light); padding-top: 14px; word-break: break-word;}
@@ -450,6 +446,15 @@
                     <div class="multiselect-options" id="subCategoryDropdownOptions" onclick="event.stopPropagation()">
                         <input type="text" class="dropdown-search" id="subCatSearch" placeholder="搜尋小類..." oninput="renderSubCatList()">
                         <div class="dropdown-list" id="subCatList"></div>
+                    </div>
+                </div>
+
+                <!-- 🌟 維修歷程篩選區塊 -->
+                <div class="multiselect-container">
+                    <button class="multiselect-trigger" id="repairTrigger" onclick="toggleDropdown('repairDropdownOptions', event)">選擇維修歷程</button>
+                    <div class="multiselect-options" id="repairDropdownOptions" onclick="event.stopPropagation()">
+                        <input type="text" class="dropdown-search" id="repairSearch" placeholder="搜尋維修歷程..." oninput="renderRepairList()">
+                        <div class="dropdown-list" id="repairList"></div>
                     </div>
                 </div>
             </div>
@@ -587,12 +592,23 @@
     const FIELD_REPAIR = "entry.1532009896"; // 🌟 新增的維修歷程欄位 ID
 
     let allProducts = [], cart = [], filteredProductsCache = [];
-    let selectedBrands = [], selectedSubCategories = [];
+    let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
     
     const BATCH_SIZE = 30; 
     let currentRenderCount = 0;
     let scrollObserver = null;
     let isCheckingOut = false; 
+
+    // 🌟 安全轉譯 HTML/JS 字元函數，用來防止文字內容包含換行或單雙引號時導致網頁崩潰
+    function escapeHtmlJS(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/\\/g, "\\\\")
+            .replace(/'/g, "\\'")
+            .replace(/"/g, "&quot;")
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r");
+    }
 
     /* -----------------------------------------------------------
        🌟 Flatpickr 客製化：生成與系統一致的下拉選單 (年月) + 自動置中
@@ -784,15 +800,18 @@
         fetchProductsFromSupabase();
     }
 
+    // 🌟 更新：儲存與讀取維修篩選項
     function saveFiltersToLocal() {
         localStorage.setItem('savedBrands', JSON.stringify(selectedBrands));
         localStorage.setItem('savedSubCats', JSON.stringify(selectedSubCategories));
+        localStorage.setItem('savedRepairs', JSON.stringify(selectedRepairs));
         renderActiveFilters();
     }
     function loadSavedFilters() {
         try {
             selectedBrands = JSON.parse(localStorage.getItem('savedBrands')) || [];
             selectedSubCategories = JSON.parse(localStorage.getItem('savedSubCats')) || [];
+            selectedRepairs = JSON.parse(localStorage.getItem('savedRepairs')) || [];
             renderActiveFilters();
         } catch(e) { console.error(e); }
     }
@@ -800,8 +819,9 @@
     function renderActiveFilters() {
         const container = document.getElementById('activeFiltersContainer');
         let html = '';
-        selectedBrands.forEach(b => { html += `<div class="active-filter-tag">${b} <span onclick="removeFilter('brand', '${b}')">✕</span></div>`; });
-        selectedSubCategories.forEach(s => { html += `<div class="active-filter-tag" style="background:#f59f00;">${s} <span onclick="removeFilter('subCategory', '${s}')">✕</span></div>`; });
+        selectedBrands.forEach(b => { html += `<div class="active-filter-tag">${b} <span onclick="removeFilter('brand', '${escapeHtmlJS(b)}')">✕</span></div>`; });
+        selectedSubCategories.forEach(s => { html += `<div class="active-filter-tag" style="background:#f59f00;">${s} <span onclick="removeFilter('subCategory', '${escapeHtmlJS(s)}')">✕</span></div>`; });
+        selectedRepairs.forEach(r => { html += `<div class="active-filter-tag" style="background:#8e8e93;">${r} <span onclick="removeFilter('repair', '${escapeHtmlJS(r)}')">✕</span></div>`; });
         if (html !== '') html += `<button class="clear-filters-btn" onclick="clearAllFilters()">清除全部</button>`;
         container.innerHTML = html;
         updateFilterLabels();
@@ -809,14 +829,15 @@
 
     function removeFilter(type, value) {
         if (type === 'brand') selectedBrands = selectedBrands.filter(b => b !== value);
-        else selectedSubCategories = selectedSubCategories.filter(s => s !== value);
-        saveFiltersToLocal(); resetPaginationAndFilter(); renderBrandList(); renderSubCatList();
+        else if (type === 'subCategory') selectedSubCategories = selectedSubCategories.filter(s => s !== value);
+        else if (type === 'repair') selectedRepairs = selectedRepairs.filter(r => r !== value);
+        saveFiltersToLocal(); resetPaginationAndFilter(); renderBrandList(); renderSubCatList(); renderRepairList();
     }
 
     function clearAllFilters() {
-        selectedBrands = []; selectedSubCategories = [];
+        selectedBrands = []; selectedSubCategories = []; selectedRepairs = [];
         document.getElementById('searchInput').value = '';
-        saveFiltersToLocal(); resetPaginationAndFilter(); renderBrandList(); renderSubCatList();
+        saveFiltersToLocal(); resetPaginationAndFilter(); renderBrandList(); renderSubCatList(); renderRepairList();
     }
 
     function toggleDropdown(id, event) {
@@ -830,6 +851,7 @@
             if (searchInput) { searchInput.value = ''; searchInput.focus(); }
             if (id === 'brandDropdownOptions') renderBrandList();
             if (id === 'subCategoryDropdownOptions') renderSubCatList();
+            if (id === 'repairDropdownOptions') renderRepairList();
         }
     }
     
@@ -865,7 +887,7 @@
         let html = '';
         filtered.forEach(b => {
             const isChecked = selectedBrands.includes(b);
-            html += `<div class="multi-select-item" onclick="toggleSelection('brand', '${b}')"><input type="checkbox" ${isChecked ? 'checked' : ''}><span>${b}</span></div>`;
+            html += `<div class="multi-select-item" onclick="toggleSelection('brand', '${escapeHtmlJS(b)}')"><input type="checkbox" ${isChecked ? 'checked' : ''}><span>${b}</span></div>`;
         });
         document.getElementById('brandList').innerHTML = html || '<div style="padding:10px; color:var(--text-muted); text-align:center;">無結果</div>';
     }
@@ -877,9 +899,21 @@
         let html = '';
         filtered.forEach(s => {
             const isChecked = selectedSubCategories.includes(s);
-            html += `<div class="multi-select-item" onclick="toggleSelection('subCategory', '${s}')"><input type="checkbox" ${isChecked ? 'checked' : ''}><span>${s}</span></div>`;
+            html += `<div class="multi-select-item" onclick="toggleSelection('subCategory', '${escapeHtmlJS(s)}')"><input type="checkbox" ${isChecked ? 'checked' : ''}><span>${s}</span></div>`;
         });
         document.getElementById('subCatList').innerHTML = html || '<div style="padding:10px; color:var(--text-muted); text-align:center;">無結果</div>';
+    }
+
+    function renderRepairList() {
+        const keyword = document.getElementById('repairSearch').value.toLowerCase();
+        const repairs = [...new Set(allProducts.map(p => (p.repair_history && p.repair_history.trim() !== '') ? p.repair_history : '無'))].sort();
+        const filtered = repairs.filter(r => r.toLowerCase().includes(keyword));
+        let html = '';
+        filtered.forEach(r => {
+            const isChecked = selectedRepairs.includes(r);
+            html += `<div class="multi-select-item" onclick="toggleSelection('repair', '${escapeHtmlJS(r)}')"><input type="checkbox" ${isChecked ? 'checked' : ''}><span>${r}</span></div>`;
+        });
+        document.getElementById('repairList').innerHTML = html || '<div style="padding:10px; color:var(--text-muted); text-align:center;">無結果</div>';
     }
 
     function toggleSelection(type, value) {
@@ -887,10 +921,14 @@
             const idx = selectedBrands.indexOf(value);
             if (idx > -1) selectedBrands.splice(idx, 1); else selectedBrands.push(value);
             renderBrandList();
-        } else {
+        } else if (type === 'subCategory') {
             const idx = selectedSubCategories.indexOf(value);
             if (idx > -1) selectedSubCategories.splice(idx, 1); else selectedSubCategories.push(value);
             renderSubCatList();
+        } else if (type === 'repair') {
+            const idx = selectedRepairs.indexOf(value);
+            if (idx > -1) selectedRepairs.splice(idx, 1); else selectedRepairs.push(value);
+            renderRepairList();
         }
         saveFiltersToLocal(); resetPaginationAndFilter();
     }
@@ -922,6 +960,11 @@
         if (selectedSubCategories.length === 0) subCategoryTrigger.innerText = "選擇小類";
         else if (selectedSubCategories.length <= 2) subCategoryTrigger.innerText = selectedSubCategories.join(', ');
         else subCategoryTrigger.innerText = `${selectedSubCategories[0]}, ${selectedSubCategories[1]} +${selectedSubCategories.length - 2}`;
+        
+        const repairTrigger = document.getElementById('repairTrigger');
+        if (selectedRepairs.length === 0) repairTrigger.innerText = "選擇維修歷程";
+        else if (selectedRepairs.length <= 2) repairTrigger.innerText = selectedRepairs.join(', ');
+        else repairTrigger.innerText = `${selectedRepairs[0]} +${selectedRepairs.length - 1}`;
     }
 
     /* -----------------------------------------------------------
@@ -943,7 +986,11 @@
             const matchKeyword = item.model.toLowerCase().includes(keyword) || item.brand.toLowerCase().includes(keyword) || item.imei.toLowerCase().includes(keyword);
             const matchBrand = selectedBrands.length === 0 || selectedBrands.includes(item.brand);
             const matchSubCategory = selectedSubCategories.length === 0 || selectedSubCategories.includes(item.subCategory);
-            return matchKeyword && matchBrand && matchSubCategory;
+            
+            const itemRepair = (item.repair_history && item.repair_history.trim() !== '') ? item.repair_history : '無';
+            const matchRepair = selectedRepairs.length === 0 || selectedRepairs.includes(itemRepair);
+            
+            return matchKeyword && matchBrand && matchSubCategory && matchRepair;
         });
         
         currentRenderCount = 0;
@@ -1001,6 +1048,7 @@
                     <div class="product-specs">
                         <span class="spec-label">小類：</span>${item.subCategory}<br>
                         <span class="spec-label">電池：</span>${item.battery}<br>
+                        <span class="spec-label">售價：</span><span style="color: #ff3b30; font-weight: 800; font-size: 16px;">$${Number(item.price || 0).toLocaleString()}</span><br>
                         <span class="spec-label">IMEI / SN：</span>${imeiHTML}
                     </div>
                     ${repairHTML}
@@ -1124,12 +1172,10 @@
                 formData.append(FIELD_CAT, item.subCategory || "手機");                      
                 formData.append(FIELD_MODEL, `${item.brand} ${item.model}`); 
                 formData.append(FIELD_IMEI, item.imei);
-                // 🌟 串接寫入 Google 表單的維修歷程
                 formData.append(FIELD_REPAIR, item.repair_history || "無");                                          
                 
                 await fetch(GOOGLE_FORM_SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: formData }).catch(e => console.error(e));
                 
-                // 🌟 在 Supabase orders 資料表寫入 repair_history 欄位
                 ordersToInsert.push({ store: selectedStore, model: item.model, imei: item.imei, repair_history: item.repair_history || '' });
             }
 
@@ -1142,13 +1188,11 @@
             allProducts = allProducts.filter(p => !checkoutImeis.includes(p.imei));
             resetPaginationAndFilter();
 
-            // 🌟 Excel 匯出：修改標題及新增維修歷程
             const orderRows = [['【D級出清品專區 - 抓貨通知單】'], ['下載日期：', orderDate], ['指定門市：', selectedStore], [''], ['商品門市', '品牌', '品名', '等級', '電池', 'IMEI / SN', '維修歷程']];
             cart.forEach(item => { orderRows.push([item.store, item.brand, item.model, item.level, item.battery, item.imei, item.repair_history || '無']); });
             const ws = XLSX.utils.aoa_to_sheet(orderRows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "下貨明細");
             XLSX.writeFile(wb, `出清下貨單_${selectedStore}_${new Date().toISOString().slice(0,10)}.xlsx`);
             
-            // 🌟 加入延遲自動重整機制
             showToast(`🎉 訂單送出成功！系統將在 2 秒後自動重整...`);
             cart = []; document.getElementById('cartCount').innerText = 0; toggleCartDrawer(); 
             
@@ -1163,7 +1207,6 @@
 
         } catch (err) { 
             showToast("⚠️ 連線或更新失敗！", "error"); 
-            // 🌟 新增錯誤訊息彈窗抓蟲
             alert("系統詳細錯誤訊息：" + JSON.stringify(err)); 
             console.error(err);
         } finally {
@@ -1197,7 +1240,6 @@
     function lockAdminPanel() { localStorage.removeItem('admin_logged_in'); document.getElementById('adminPanel').style.display = 'none'; showToast('🔒 已鎖定！', 'warning'); }
     function closeModalsOnOutsideClick(event, id) { if (event.target.id === id) document.getElementById(id).style.display = 'none'; }
 
-    // 🌟 原本的商品庫存匯入
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
         if (!fileInput.files[0]) { showToast('⚠️ 請選擇庫存 Excel！', 'warning'); return; }
@@ -1228,7 +1270,6 @@
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // 🌟 維修歷程的專屬匯入邏輯 (加入「需維修項目」支援)
     async function handleRepairFileRead() {
         const fileInput = document.getElementById('repairFileInput');
         if (!fileInput.files[0]) { showToast('⚠️ 請選擇維修歷程 Excel！', 'warning'); return; }
@@ -1281,7 +1322,6 @@
 
     async function downloadOrdersOnlyNameAndImei() {
         try {
-            // 🌟 匯出時一併拉取 repair_history 資料
             let query = _supabase.from('orders').select('created_at, store, model, imei, repair_history').order('created_at', { ascending: true });
             const startDate = document.getElementById('exportStartDate').value; const endDate = document.getElementById('exportEndDate').value;
             if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`); if (endDate) query = query.lte('created_at', `${endDate}T23:59:59.999`);
@@ -1289,7 +1329,6 @@
             if (error) throw error;
             if (!orderList || orderList.length === 0) { showToast("⚠️ 此區間內無訂單紀錄！", "warning"); return; }
             
-            // 🌟 修改標題與新增欄位
             const excelRows = [['下單時間', '指定門市', '品名', 'IMEI / SN', '維修歷程']];
             orderList.forEach(order => {
                 let formattedTime = '無紀錄'; if (order.created_at) formattedTime = new Date(order.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
