@@ -1135,6 +1135,9 @@
         const selectedStore = document.getElementById('custStore').value;
         if (!selectedStore) { showToast('⚠️ 請選擇下單門市！', 'warning'); return; }
         
+        // 🌟 在處理訂單與匯出前，強制將購物車內容依照「品名 (A-Z)」排序
+        cart.sort((a, b) => (a.model || '').toString().localeCompare((b.model || '').toString(), 'zh-Hant'));
+
         const checkoutImeis = cart.map(item => item.imei);
         const checkoutBtn = document.querySelector('.cart-drawer .btn-green');
         const originalBtnText = checkoutBtn.innerText;
