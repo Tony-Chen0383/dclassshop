@@ -478,7 +478,6 @@
             
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">📋 導出歷史訂單 Excel</label>
-                <!-- 📱 防擠壓修復 -->
                 <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                     <input type="text" id="exportStartDate" class="custom-date-input" placeholder="開始日期" style="flex: 1; min-width: 0;">
                     <span style="color: var(--text-muted); font-size: 13px; flex-shrink: 0;">至</span>
@@ -589,7 +588,10 @@
     // 🌟 Google表單參數
     const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435", FIELD_CAT = "entry.570634756", FIELD_MODEL = "entry.732769472", FIELD_IMEI = "entry.112740061";        
-    const FIELD_REPAIR = "entry.1532009896"; // 🌟 新增的維修歷程欄位 ID
+    const FIELD_REPAIR = "entry.1532009896"; 
+    // 🌟 新增的國際版本與螢幕烙印欄位 ID
+    const FIELD_VERSION = "entry.1763177797";
+    const FIELD_SCREEN_BURN = "entry.1920579620";
 
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
@@ -599,7 +601,7 @@
     let scrollObserver = null;
     let isCheckingOut = false; 
 
-    // 🌟 安全轉譯 HTML/JS 字元函數，用來防止文字內容包含換行或單雙引號時導致網頁崩潰
+    // 🌟 安全轉譯 HTML/JS 字元函數
     function escapeHtmlJS(str) {
         if (!str) return '';
         return String(str)
@@ -1036,7 +1038,6 @@
                     ${item.repair_history}
                  </div>` : '';
             
-            // 🌟 這裡新增呈現「國際版本」與「螢幕烙印」
             card.innerHTML = `
                 <div>
                     <div class="tag-group">
@@ -1178,6 +1179,10 @@
                 formData.append(FIELD_IMEI, item.imei);
                 formData.append(FIELD_REPAIR, item.repair_history || "無");                                          
                 
+                // 🌟 新增寫入 Google 表單的國際版本與螢幕烙印
+                formData.append(FIELD_VERSION, item.version || "-");
+                formData.append(FIELD_SCREEN_BURN, item.screen_burn || "-");
+
                 await fetch(GOOGLE_FORM_SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: formData }).catch(e => console.error(e));
                 
                 ordersToInsert.push({ 
