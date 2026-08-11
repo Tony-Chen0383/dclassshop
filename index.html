@@ -506,6 +506,18 @@
                 </div>
                 <button onclick="handleRepairFileRead()" class="mac-btn btn-green btn-sm" id="btnImportRepair" style="width: 100%;">匯入維修紀錄</button>
             </div>
+
+            <!-- 🌟 新增：門市管理區塊 -->
+            <div style="border-top: 1px solid var(--border-light); padding-top: 16px; margin-top: 16px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">🏢 門市管理</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="newStoreInput" placeholder="輸入新門市名稱" style="flex: 1; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); padding-left: 8px; background: var(--bg-input); color: var(--text-main);">
+                    <button onclick="addNewStore()" class="mac-btn btn-blue btn-sm">新增</button>
+                </div>
+                <div id="adminStoreList" style="max-height: 150px; overflow-y: auto; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-light); padding: 4px;">
+                    <!-- 動態門市列表會生長在這裡 -->
+                </div>
+            </div>
         </div>
 
         <!-- 🌟 商品網格 (局部滾動區域) -->
@@ -556,20 +568,8 @@
                 
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
-                    <div class="custom-select-options" id="storeSelectOptions">
-                        <div class="custom-select-item" onclick="selectStore('台北光華', event)">台北光華</div>
-                        <div class="custom-select-item" onclick="selectStore('桃園站前', event)">桃園站前</div>
-                        <div class="custom-select-item" onclick="selectStore('桃園NOVA', event)">桃園NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢旗艦', event)">中壢旗艦</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢站前', event)">中壢站前</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢NOVA', event)">中壢NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('新竹站前', event)">新竹站前</div>
-                        <div class="custom-select-item" onclick="selectStore('台中站前', event)">台中站前</div>
-                        <div class="custom-select-item" onclick="selectStore('台中NOVA', event)">台中NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('東海NOVA', event)">東海NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('台南彩虹3C', event)">台南彩虹3C</div>
-                        <div class="custom-select-item" onclick="selectStore('高雄NOVA', event)">高雄NOVA</div>
-                    </div>
+                    <!-- 🌟 購物車的門市選單被清空了，之後將由 JS 動態生成 -->
+                    <div class="custom-select-options" id="storeSelectOptions"></div>
                     <input type="hidden" id="custStore" value="">
                 </div>
             </div>
@@ -589,12 +589,13 @@
     const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435", FIELD_CAT = "entry.570634756", FIELD_MODEL = "entry.732769472", FIELD_IMEI = "entry.112740061";        
     const FIELD_REPAIR = "entry.1532009896"; 
-    // 🌟 新增的國際版本與螢幕烙印欄位 ID
     const FIELD_VERSION = "entry.1763177797";
     const FIELD_SCREEN_BURN = "entry.1920579620";
 
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
+    // 🌟 新增一個變數用來儲存從資料庫抓下來的門市名單
+    let storeList = [];
     
     const BATCH_SIZE = 30; 
     let currentRenderCount = 0;
@@ -726,6 +727,7 @@
         checkLocalLoginState(); 
         loadSavedFilters(); 
         fetchProductsFromSupabase(); 
+        fetchStoresFromSupabase(); // 🌟 網頁載入時呼叫這隻 API 去抓門市名單
         
         flatpickr("#exportStartDate", flatpickrConfig);
         flatpickr("#exportEndDate", flatpickrConfig);
@@ -802,6 +804,7 @@
         fetchProductsFromSupabase();
     }
 
+    // 🌟 更新：儲存與讀取維修篩選項
     function saveFiltersToLocal() {
         localStorage.setItem('savedBrands', JSON.stringify(selectedBrands));
         localStorage.setItem('savedSubCats', JSON.stringify(selectedSubCategories));
@@ -1179,7 +1182,6 @@
                 formData.append(FIELD_IMEI, item.imei);
                 formData.append(FIELD_REPAIR, item.repair_history || "無");                                          
                 
-                // 🌟 新增寫入 Google 表單的國際版本與螢幕烙印
                 formData.append(FIELD_VERSION, item.version || "-");
                 formData.append(FIELD_SCREEN_BURN, item.screen_burn || "-");
 
@@ -1257,6 +1259,86 @@
     function checkLocalLoginState() { if (localStorage.getItem('admin_logged_in') === 'true') document.getElementById('adminPanel').style.display = 'block'; }
     function lockAdminPanel() { localStorage.removeItem('admin_logged_in'); document.getElementById('adminPanel').style.display = 'none'; showToast('🔒 已鎖定！', 'warning'); }
     function closeModalsOnOutsideClick(event, id) { if (event.target.id === id) document.getElementById(id).style.display = 'none'; }
+
+    // 🌟 新增：從資料庫抓取門市清單的函數
+    async function fetchStoresFromSupabase() {
+        try {
+            const { data, error } = await _supabase.from('stores').select('*').order('id', { ascending: true });
+            if (error) throw error;
+            storeList = data || [];
+            renderStoreDropdown();
+            renderAdminStoreList();
+        } catch (err) {
+            console.error("載入門市失敗", err);
+        }
+    }
+
+    // 🌟 新增：動態生成購物車的門市下拉選單
+    function renderStoreDropdown() {
+        const optionsDiv = document.getElementById('storeSelectOptions');
+        optionsDiv.innerHTML = '';
+        storeList.forEach(store => {
+            // 使用 escapeHtmlJS 防止門市名稱帶有引號造成錯誤
+            optionsDiv.innerHTML += `<div class="custom-select-item" onclick="selectStore('${escapeHtmlJS(store.name)}', event)">${store.name}</div>`;
+        });
+    }
+
+    // 🌟 新增：動態生成後台管理的門市清單
+    function renderAdminStoreList() {
+        const listDiv = document.getElementById('adminStoreList');
+        if (storeList.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">目前無門市資料</div>';
+            return;
+        }
+        listDiv.innerHTML = storeList.map(store => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--border-light); font-size: 13px; color: var(--text-main);">
+                <span>${store.name}</span>
+                <button onclick="deleteStore(${store.id})" class="mac-btn btn-red" style="height: 24px; padding: 0 8px; font-size: 11px; border-radius: 4px;">刪除</button>
+            </div>
+        `).join('');
+    }
+
+    // 🌟 新增：在後台加入新門市
+    async function addNewStore() {
+        const input = document.getElementById('newStoreInput');
+        const storeName = input.value.trim();
+        if (!storeName) { showToast('⚠️ 請輸入門市名稱！', 'warning'); return; }
+        if (storeList.some(s => s.name === storeName)) { showToast('⚠️ 此門市已存在！', 'warning'); return; }
+
+        try {
+            const { error } = await _supabase.from('stores').insert([{ name: storeName }]);
+            if (error) throw error;
+            showToast(`🎉 已新增門市：${storeName}`);
+            input.value = '';
+            fetchStoresFromSupabase(); // 重新抓取並更新畫面
+        } catch (err) {
+            showToast('❌ 新增失敗，請檢查網路連線', 'error');
+            console.error(err);
+        }
+    }
+
+    // 🌟 新增：在後台刪除門市
+    async function deleteStore(id) {
+        if(!confirm('確定要移除此門市嗎？')) return;
+        try {
+            const { error } = await _supabase.from('stores').delete().eq('id', id);
+            if (error) throw error;
+            showToast(`🗑️ 門市已移除`);
+            
+            // 如果剛好購物車選到了這間被刪除的門市，把它清空
+            const deletedStore = storeList.find(s => s.id === id);
+            if(deletedStore && document.getElementById('custStore').value === deletedStore.name) {
+                document.getElementById('custStore').value = '';
+                document.getElementById('storeSelectTrigger').innerText = '-- 請選擇門市 --';
+                document.getElementById('storeSelectTrigger').classList.remove('has-value');
+            }
+
+            fetchStoresFromSupabase(); // 重新抓取並更新畫面
+        } catch (err) {
+            showToast('❌ 刪除失敗', 'error');
+            console.error(err);
+        }
+    }
 
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
