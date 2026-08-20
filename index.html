@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>📱 D級出清品直購專區 (企業版)</title>
+    <title>📱 D級出清品直購專區 V1.3</title>
     
     <!-- 引入核心庫 -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -121,7 +121,7 @@
             .scroll-container { padding-left: 2px; padding-right: 2px; }
             .admin-panel { 
                 top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                width: 90%; max-width: 440px; padding: 16px; max-height: 85vh; 
+                width: 90%; max-width: 400px; padding: 16px; max-height: 85vh; 
             }
         }
 
@@ -247,15 +247,37 @@
         .fp-select-options { bottom: auto !important; top: calc(100% + 4px) !important; transform-origin: top center !important; transform: scale(0.95) translateY(-5px) !important; }
         .custom-select-container.open .fp-select-options { transform: scale(1) translateY(0) !important; }
 
-        .custom-date-input { background-color: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-main); border-radius: var(--radius-sm); padding: 0 10px; font-size: 14px; font-weight: 500; transition: all var(--transition-ease); outline: none; font-family: inherit; width: 100%; box-sizing: border-box; cursor: pointer; }
+        .custom-date-input {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            border-radius: var(--radius-sm);
+            width: 100%;
+            height: var(--h-std);
+            min-height: var(--h-std);
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: var(--h-std);
+            transition: all var(--transition-ease);
+            outline: none;
+            font-family: inherit;
+            box-sizing: border-box;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+        }
         .custom-date-input:focus { background-color: var(--bg-card); border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3); }
-        .custom-date-input::placeholder { color: var(--text-muted); font-weight: normal;}
+        .custom-date-input::placeholder { color: var(--text-muted); font-weight: 500; }
+        .custom-date-input:hover { border-color: rgba(0, 122, 255, 0.45); }
+        .admin-panel .custom-date-input { height: 40px; min-height: 40px; font-size: 14px; }
+        .history-filter-panel .custom-date-input { height: var(--h-std); min-height: var(--h-std); font-size: 14px; }
 
         /* ==================================================================
            ⚙️ 6. 固定於左上角的後台面板
            ================================================================== */
         .admin-panel { 
-            display: none; position: fixed; top: 20px; left: 20px; width: 440px; max-height: calc(100vh - 40px); overflow-y: auto;
+            display: none; position: fixed; top: 20px; left: 20px; width: 340px; max-height: calc(100vh - 40px); overflow-y: auto;
             background: var(--bg-header); backdrop-filter: saturate(180%) blur(25px); -webkit-backdrop-filter: saturate(180%) blur(25px); 
             border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.3); 
             padding: 20px; border-radius: var(--radius-lg); z-index: 9999; font-size: 13px;
@@ -411,6 +433,188 @@
             pointer-events: auto; max-width: 350px; line-height: 1.5; 
         }
         .toast.show { transform: translateY(0) scale(1); opacity: 1; }
+
+
+        /* ==================================================================
+           📋 9. V1.2 門市「我的下單紀錄」
+           ================================================================== */
+        .history-modal-content {
+            width: min(960px, 94vw); max-width: 960px; max-height: 88vh; padding: 0;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .history-modal-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            padding: 20px 24px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+        }
+        .history-modal-header h2 { margin: 0; font-size: 20px; }
+        .history-modal-body { padding: 20px 24px 24px; overflow-y: auto; min-height: 0; }
+        .history-notice {
+            margin-bottom: 16px; padding: 12px 14px; border-radius: var(--radius-sm);
+            background: rgba(245, 159, 0, 0.09); border: 1px solid rgba(245, 159, 0, 0.28);
+            color: var(--text-main); font-size: 13px; line-height: 1.6;
+        }
+        .history-filter-panel {
+            display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(135px, .9fr) minmax(135px, .9fr) auto;
+            gap: 10px; align-items: end; padding: 14px; margin-bottom: 16px;
+            border: 1px solid var(--border-light); border-radius: var(--radius-lg); background: var(--bg-body);
+        }
+        .history-field label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .history-select {
+            width: 100%; height: var(--h-std); border-radius: var(--radius-sm); padding: 0 12px;
+            background: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-main);
+            font-family: inherit; font-size: 14px; font-weight: 600; outline: none;
+        }
+        .history-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+        .history-summary {
+            display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;
+        }
+        .history-summary.show { display: grid; }
+        .history-kpi {
+            background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg);
+            padding: 12px 14px; box-shadow: var(--shadow-card);
+        }
+        .history-kpi span { display: block; color: var(--text-muted); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .history-kpi strong { font-size: 20px; color: var(--text-main); }
+        .history-list { display: flex; flex-direction: column; gap: 12px; }
+        .history-order-card {
+            border: 1px solid var(--border-light); border-radius: var(--radius-lg); background: var(--bg-card);
+            box-shadow: var(--shadow-card); overflow: hidden;
+        }
+        .history-order-head {
+            display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(150px, .9fr) auto auto;
+            gap: 12px; align-items: center; padding: 14px 16px; cursor: pointer; user-select: none;
+        }
+        .history-order-head:hover { background: rgba(0,122,255,0.04); }
+        .history-order-no { font-size: 15px; font-weight: 800; color: var(--blue); letter-spacing: .01em; }
+        .history-order-time { font-size: 13px; color: var(--text-muted); }
+        .history-order-count { font-size: 13px; font-weight: 700; white-space: nowrap; }
+        .history-status {
+            display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px;
+            border-radius: 999px; background: rgba(52,199,89,.12); color: #248a3d; font-size: 12px; font-weight: 800;
+            white-space: nowrap;
+        }
+        [data-theme="dark"] .history-status { color: #32d74b; background: rgba(50,215,75,.12); }
+        .history-order-detail { display: none; border-top: 1px solid var(--border-light); padding: 6px 16px 14px; }
+        .history-order-card.open .history-order-detail { display: block; }
+        .history-item {
+            display: grid; grid-template-columns: minmax(180px, 1.35fr) minmax(130px, .9fr) minmax(100px, .7fr) minmax(100px, .7fr);
+            gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border-light); align-items: start;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item-model { font-weight: 800; line-height: 1.4; }
+        .history-meta-label { display: block; color: var(--text-muted); font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+        .history-meta-value { font-size: 13px; color: var(--text-main); word-break: break-all; }
+        .history-repair { grid-column: 1 / -1; padding-top: 2px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .history-empty {
+            padding: 36px 16px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-light);
+            border-radius: var(--radius-lg); background: var(--bg-card); line-height: 1.8;
+        }
+        .history-loading { padding: 30px; text-align: center; color: var(--text-muted); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .header-actions { width: 100%; }
+            .header-actions .mac-btn:not(.btn-icon) { flex: 1; }
+            .history-modal-content { width: 94vw; max-height: 90vh; }
+            .history-modal-header { padding: 16px 18px; }
+            .history-modal-body { padding: 16px 18px 20px; }
+            .history-filter-panel { grid-template-columns: 1fr 1fr; }
+            .history-filter-panel .history-field:first-child { grid-column: 1 / -1; }
+            .history-filter-panel .mac-btn { grid-column: 1 / -1; width: 100%; }
+            .history-summary { grid-template-columns: repeat(3, 1fr); }
+            .history-order-head { grid-template-columns: 1fr auto; }
+            .history-order-time { grid-column: 1 / 2; }
+            .history-order-count { grid-column: 2 / 3; grid-row: 1 / 2; }
+            .history-status { grid-column: 2 / 3; grid-row: 2 / 3; }
+            .history-item { grid-template-columns: 1fr 1fr; }
+            .history-item-model { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 480px) {
+            .history-filter-panel { grid-template-columns: 1fr; }
+            .history-filter-panel .history-field:first-child { grid-column: auto; }
+            .history-filter-panel .mac-btn { grid-column: auto; }
+            .history-summary { grid-template-columns: 1fr; }
+            .history-item { grid-template-columns: 1fr; }
+            .history-item-model, .history-repair { grid-column: auto; }
+        }
+
+    
+
+        /* ==================================================================
+           ✨ V1.3
+           ================================================================== */
+        .more-filter-toggle { flex-shrink: 0; min-width: 118px; }
+        .more-filter-toggle.active { color: var(--blue); border-color: rgba(0,122,255,.45); background: rgba(0,122,255,.08); }
+        .more-filters-panel {
+            display: none; flex: 1 0 100%; align-items: center; gap: 12px; padding: 10px 12px;
+            border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-body);
+            animation: fadeIn .2s ease;
+        }
+        .more-filters-panel.show { display: flex; }
+        .more-filter-label { font-size: 12px; font-weight: 800; color: var(--text-muted); white-space: nowrap; }
+        .more-filters-panel .multiselect-container { min-width: 190px; max-width: 300px; }
+        .more-filter-hint { color: var(--text-muted); font-size: 12px; }
+
+        .cart-action-btn.cart-added { box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+
+        .history-quick-ranges { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+        .history-quick-label { color: var(--text-muted); font-size: 12px; font-weight: 800; margin-right: 2px; }
+        .history-quick-btn {
+            height: 32px; padding: 0 12px; border: 1px solid var(--border-light); border-radius: 999px;
+            background: var(--bg-input); color: var(--text-main); font-family: inherit; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all .18s ease;
+        }
+        .history-quick-btn:hover { border-color: rgba(0,122,255,.45); }
+        .history-quick-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+        .checkout-confirm-overlay { z-index: 10020; }
+        .checkout-confirm-content { max-width: 460px; padding: 24px; }
+        .checkout-confirm-icon { font-size: 34px; text-align: center; margin-bottom: 8px; }
+        .checkout-confirm-content h2 { text-align: center; margin: 0 0 8px; font-size: 20px; }
+        .checkout-confirm-sub { text-align: center; color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
+        .checkout-confirm-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .checkout-confirm-summary > div { padding: 12px 14px; background: var(--bg-body); border: 1px solid var(--border-light); border-radius: var(--radius-sm); }
+        .checkout-confirm-summary span { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+        .checkout-confirm-summary strong { display: block; color: var(--text-main); font-size: 16px; }
+        .checkout-confirm-items { max-height: 210px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 4px 12px; }
+        .checkout-confirm-item { display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+        .checkout-confirm-item:last-child { border-bottom: 0; }
+        .checkout-confirm-item > span { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: white; font-size: 11px; font-weight: 800; }
+        .checkout-confirm-item strong { display: block; font-size: 13px; line-height: 1.4; }
+        .checkout-confirm-item small { display: block; color: var(--text-muted); margin-top: 3px; font-size: 11px; word-break: break-all; }
+        .checkout-confirm-actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; margin-top: 18px; }
+        .checkout-confirm-actions .mac-btn { width: 100%; height: 42px; }
+
+        .summary-badge { font-size: 12px; }
+        .summary-badge strong { font-size: 18px; margin: 0 5px; }
+        .status-badge { font-size: 12px; opacity: .78; }
+
+        @media (max-width: 768px) {
+            .search-bar input#searchInput { flex: 1 0 100%; }
+            .search-bar .multiselect-container { flex: 1; max-width: none; }
+            .more-filter-toggle { flex: 0 0 auto; }
+            .more-filters-panel { align-items: stretch; }
+            .more-filters-panel .multiselect-container { max-width: none; flex: 1; }
+            .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+            .product-card { padding: 14px; }
+        }
+
+        @media (max-width: 480px) {
+            .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .product-card { padding: 10px; }
+            .product-title { font-size: 14px; }
+            .product-specs { font-size: 12px; line-height: 1.55; }
+            .imei-display { font-size: 10px; }
+            .more-filters-panel { flex-direction: column; align-items: stretch; }
+            .more-filter-label, .more-filter-hint { display: none; }
+            .checkout-confirm-content { width: 94vw; padding: 20px; }
+            .checkout-confirm-summary { grid-template-columns: 1fr 1fr; }
+            .checkout-confirm-actions { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 360px) {
+            .product-grid { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -421,11 +625,12 @@
         <div class="sticky-wrapper">
             <div class="header-bar">
                 <div class="title-group" onclick="refreshToLatest()" title="點擊重新整理最新庫存">
-                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">☁️ 企業雲端版</span></h1>
+                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3</span></h1>
                     <div class="sub-title">本區僅限販售「D級出清品」，有任何問題請洽營運部-Tony</div>
                 </div>
                 <div class="header-actions">
                     <button class="mac-btn btn-gray btn-icon" id="themeToggle" onclick="toggleTheme()" title="切換深/淺色模式">🌙</button>
+                    <button onclick="openOrderHistoryModal()" class="mac-btn btn-blue" id="orderHistoryBtn">📋 我的下單紀錄</button>
                     <button onclick="openAdminAuthModal()" class="mac-btn btn-gray" id="adminTriggerBtn">⚙️ 後台管理</button>
                 </div>
             </div>
@@ -449,7 +654,7 @@
                     </div>
                 </div>
 
-                <!-- 🌟 維修歷程篩選區塊 -->
+                <!-- V1.2.1：維修歷程為重要篩選依據，改為首頁常駐顯示 -->
                 <div class="multiselect-container">
                     <button class="multiselect-trigger" id="repairTrigger" onclick="toggleDropdown('repairDropdownOptions', event)">選擇維修歷程</button>
                     <div class="multiselect-options" id="repairDropdownOptions" onclick="event.stopPropagation()">
@@ -506,18 +711,6 @@
                 </div>
                 <button onclick="handleRepairFileRead()" class="mac-btn btn-green btn-sm" id="btnImportRepair" style="width: 100%;">匯入維修紀錄</button>
             </div>
-
-            <!-- 🌟 門市管理區塊 (新增編輯與排序功能) -->
-            <div style="border-top: 1px solid var(--border-light); padding-top: 16px; margin-top: 16px;">
-                <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">🏢 門市管理 (拖曳或點擊排序)</label>
-                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <input type="text" id="newStoreInput" placeholder="輸入新門市名稱" style="flex: 1; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); padding-left: 8px; background: var(--bg-input); color: var(--text-main);">
-                    <button onclick="addNewStore()" class="mac-btn btn-blue btn-sm">新增</button>
-                </div>
-                <div id="adminStoreList" style="max-height: 250px; overflow-y: auto; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-light); padding: 4px;">
-                    <!-- 動態門市列表會生長在這裡 -->
-                </div>
-            </div>
         </div>
 
         <!-- 🌟 商品網格 (局部滾動區域) -->
@@ -538,6 +731,90 @@
         <div class="cart-badge" id="cartCount">0</div>
     </div>
     
+    <!-- 📋 V1.2 門市下單紀錄查詢 Modal -->
+    <div class="modal-overlay" id="orderHistoryModal" onclick="closeModalsOnOutsideClick(event, 'orderHistoryModal')">
+        <div class="modal-content history-modal-content">
+            <div class="history-modal-header">
+                <div>
+                    <h2>📋 我的下單紀錄</h2>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">查詢門市於本網站送出的歷史訂單</div>
+                </div>
+                <button class="mac-btn btn-gray" style="padding: 0 11px; height: 32px;" onclick="closeOrderHistoryModal()">✕</button>
+            </div>
+            <div class="history-modal-body">
+                <div class="history-notice">
+                    ℹ️ 本區顯示的是「本網站下單紀錄」，用來確認門市曾下過哪些商品；目前未與公司系統串接，因此不顯示公司出貨單號與實際出貨進度。
+                </div>
+
+                <div class="history-quick-ranges" aria-label="快速日期">
+                    <span class="history-quick-label">快速日期</span>
+                    <button class="history-quick-btn" onclick="applyHistoryQuickRange('today', this)">今天</button>
+                    <button class="history-quick-btn" onclick="applyHistoryQuickRange('7days', this)">近 7 天</button>
+                    <button class="history-quick-btn active" onclick="applyHistoryQuickRange('month', this)">本月</button>
+                    <button class="history-quick-btn" onclick="applyHistoryQuickRange('lastMonth', this)">上月</button>
+                </div>
+
+                <div class="history-filter-panel">
+                    <div class="history-field">
+                        <label for="historyStoreSelect">下單門市 *</label>
+                        <select id="historyStoreSelect" class="history-select">
+                            <option value="">-- 請選擇門市 --</option>
+                            <option value="台北光華">台北光華</option>
+                            <option value="桃園站前">桃園站前</option>
+                            <option value="桃園NOVA">桃園NOVA</option>
+                            <option value="中壢旗艦">中壢旗艦</option>
+                            <option value="中壢站前">中壢站前</option>
+                            <option value="中壢NOVA">中壢NOVA</option>
+                            <option value="新竹站前">新竹站前</option>
+                            <option value="台中站前">台中站前</option>
+                            <option value="台中NOVA">台中NOVA</option>
+                            <option value="東海NOVA">東海NOVA</option>
+                            <option value="台南彩虹3C">台南彩虹3C</option>
+                            <option value="高雄NOVA">高雄NOVA</option>
+                        </select>
+                    </div>
+                    <div class="history-field">
+                        <label for="historyStartDate">開始日期</label>
+                        <input type="text" id="historyStartDate" class="custom-date-input" placeholder="不限開始日期" onchange="clearHistoryQuickActive()">
+                    </div>
+                    <div class="history-field">
+                        <label for="historyEndDate">結束日期</label>
+                        <input type="text" id="historyEndDate" class="custom-date-input" placeholder="不限結束日期" onchange="clearHistoryQuickActive()">
+                    </div>
+                    <button class="mac-btn btn-blue" onclick="queryStoreOrderHistory()">🔍 查詢</button>
+                </div>
+
+                <div class="history-summary" id="historySummary">
+                    <div class="history-kpi"><span>查詢門市</span><strong id="historySummaryStore">-</strong></div>
+                    <div class="history-kpi"><span>網站訂單</span><strong id="historySummaryOrders">0</strong></div>
+                    <div class="history-kpi"><span>商品件數</span><strong id="historySummaryItems">0</strong></div>
+                </div>
+
+                <div id="historyResults" class="history-list">
+                    <div class="history-empty">請先選擇門市，再按「查詢」查看歷史下單紀錄。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ V1.2 下單前二次確認 -->
+    <div class="modal-overlay checkout-confirm-overlay" id="checkoutConfirmModal" onclick="closeModalsOnOutsideClick(event, 'checkoutConfirmModal')">
+        <div class="modal-content checkout-confirm-content">
+            <div class="checkout-confirm-icon">🛒</div>
+            <h2>確認送出這筆訂單？</h2>
+            <div class="checkout-confirm-sub">送出後商品會從網站庫存移除，請再次確認門市與件數。</div>
+            <div class="checkout-confirm-summary">
+                <div><span>下單門市</span><strong id="checkoutConfirmStore">-</strong></div>
+                <div><span>商品件數</span><strong id="checkoutConfirmCount">0 件</strong></div>
+            </div>
+            <div class="checkout-confirm-items" id="checkoutConfirmItems"></div>
+            <div class="checkout-confirm-actions">
+                <button class="mac-btn btn-gray" onclick="closeCheckoutConfirmModal()">返回修改</button>
+                <button class="mac-btn btn-green" id="checkoutFinalConfirmBtn" onclick="performCheckout()">✅ 確認送出</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 管理員登入 Modal -->
     <div class="modal-overlay" id="adminAuthModal" onclick="closeModalsOnOutsideClick(event, 'adminAuthModal')">
         <div class="modal-content">
@@ -568,7 +845,20 @@
                 
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
-                    <div class="custom-select-options" id="storeSelectOptions"></div>
+                    <div class="custom-select-options" id="storeSelectOptions">
+                        <div class="custom-select-item" onclick="selectStore('台北光華', event)">台北光華</div>
+                        <div class="custom-select-item" onclick="selectStore('桃園站前', event)">桃園站前</div>
+                        <div class="custom-select-item" onclick="selectStore('桃園NOVA', event)">桃園NOVA</div>
+                        <div class="custom-select-item" onclick="selectStore('中壢旗艦', event)">中壢旗艦</div>
+                        <div class="custom-select-item" onclick="selectStore('中壢站前', event)">中壢站前</div>
+                        <div class="custom-select-item" onclick="selectStore('中壢NOVA', event)">中壢NOVA</div>
+                        <div class="custom-select-item" onclick="selectStore('新竹站前', event)">新竹站前</div>
+                        <div class="custom-select-item" onclick="selectStore('台中站前', event)">台中站前</div>
+                        <div class="custom-select-item" onclick="selectStore('台中NOVA', event)">台中NOVA</div>
+                        <div class="custom-select-item" onclick="selectStore('東海NOVA', event)">東海NOVA</div>
+                        <div class="custom-select-item" onclick="selectStore('台南彩虹3C', event)">台南彩虹3C</div>
+                        <div class="custom-select-item" onclick="selectStore('高雄NOVA', event)">高雄NOVA</div>
+                    </div>
                     <input type="hidden" id="custStore" value="">
                 </div>
             </div>
@@ -584,21 +874,25 @@
     const SUPABASE_ANON_KEY = "sb_publishable_nv67PTR3o6_v2KPuFbBpbg_FPiN1IyR";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
+    // 🌟 Google表單參數
     const GOOGLE_FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtnqKY6LY4eDQOo57NZ76XYApCU1gZ3ttnJEuI3EHQFr_7cA/formResponse";
     const FIELD_STORE = "entry.622983435", FIELD_CAT = "entry.570634756", FIELD_MODEL = "entry.732769472", FIELD_IMEI = "entry.112740061";        
     const FIELD_REPAIR = "entry.1532009896"; 
+    // 🌟 新增的國際版本與螢幕烙印欄位 ID
     const FIELD_VERSION = "entry.1763177797";
     const FIELD_SCREEN_BURN = "entry.1920579620";
 
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
-    let storeList = [];
     
     const BATCH_SIZE = 30; 
     let currentRenderCount = 0;
     let scrollObserver = null;
-    let isCheckingOut = false; 
+    let isCheckingOut = false;
+    // V1.3：後台解鎖只存在本次頁面生命週期，重新整理即失效
+    let adminUnlocked = false; 
 
+    // 🌟 安全轉譯 HTML/JS 字元函數
     function escapeHtmlJS(str) {
         if (!str) return '';
         return String(str)
@@ -720,16 +1014,22 @@
 
     window.onload = function() {
         initTheme();
-        checkLocalLoginState(); 
+        // V1.3：清除舊版本曾留下的門市查詢／後台登入記憶
+        localStorage.removeItem('history_store');
+        localStorage.removeItem('admin_logged_in');
+        adminUnlocked = false;
+        document.getElementById('adminPanel').style.display = 'none';
         loadSavedFilters(); 
         fetchProductsFromSupabase(); 
-        fetchStoresFromSupabase(); 
         
         flatpickr("#exportStartDate", flatpickrConfig);
         flatpickr("#exportEndDate", flatpickrConfig);
+        flatpickr("#historyStartDate", flatpickrConfig);
+        flatpickr("#historyEndDate", flatpickrConfig);
+        setDefaultHistoryDateRange();
         
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') { closeAllDropdowns(); if (document.getElementById('cartDrawer').classList.contains('show')) toggleCartDrawer(); closeAdminAuthModal(); }
+            if (e.key === 'Escape') { closeAllDropdowns(); if (document.getElementById('cartDrawer').classList.contains('show')) toggleCartDrawer(); closeAdminAuthModal(); closeOrderHistoryModal(); closeCheckoutConfirmModal(); }
             if (e.key === 'Enter' && document.getElementById('adminAuthModal').style.display === 'flex') verifyAdminPassword();
         });
         document.addEventListener('click', closeAllDropdowns);
@@ -964,6 +1264,7 @@
         if (selectedRepairs.length === 0) repairTrigger.innerText = "選擇維修歷程";
         else if (selectedRepairs.length <= 2) repairTrigger.innerText = selectedRepairs.join(', ');
         else repairTrigger.innerText = `${selectedRepairs[0]} +${selectedRepairs.length - 1}`;
+
     }
 
     /* -----------------------------------------------------------
@@ -1055,7 +1356,7 @@
                     ${repairHTML}
                 </div>
                 <div style="margin-top: 16px;">
-                    <button class="mac-btn btn-blue" style="width: 100%; border-radius: var(--radius-sm);" onclick="addToCart('${item.imei}')">放入購物車</button>
+                    <button class="mac-btn ${cart.some(c => c.imei === item.imei) ? 'btn-green cart-added' : 'btn-blue'} cart-action-btn" data-cart-imei="${escapeHtml(item.imei)}" style="width: 100%; border-radius: var(--radius-sm);" onclick="toggleCartItem('${escapeHtmlJS(item.imei)}')">${cart.some(c => c.imei === item.imei) ? '✓ 已加入' : '放入購物車'}</button>
                 </div>
             `;
             fragment.appendChild(card);
@@ -1075,6 +1376,22 @@
     /* -----------------------------------------------------------
        🛒 購物車 Drawer 與結帳 (防連點版)
        ----------------------------------------------------------- */
+    function toggleCartItem(imei) {
+        if (cart.some(item => item.imei === imei)) removeFromCart(imei);
+        else addToCart(imei);
+    }
+
+    function syncCartButtons() {
+        document.querySelectorAll('.cart-action-btn').forEach(btn => {
+            const imei = btn.dataset.cartImei || '';
+            const inCart = cart.some(item => String(item.imei) === String(imei));
+            btn.classList.toggle('btn-blue', !inCart);
+            btn.classList.toggle('btn-green', inCart);
+            btn.classList.toggle('cart-added', inCart);
+            btn.innerText = inCart ? '✓ 已加入' : '放入購物車';
+        });
+    }
+
     async function addToCart(imei) {
         if (cart.some(item => item.imei === imei)) { showToast('⚠️ 已在購物車中！', 'warning'); return; }
         try {
@@ -1088,7 +1405,8 @@
         
         const product = allProducts.find(p => p.imei === imei);
         if (product) {
-            cart.push(product); document.getElementById('cartCount').innerText = cart.length; 
+            cart.push(product); document.getElementById('cartCount').innerText = cart.length;
+            syncCartButtons();
             showToast(`🛒 已加入購物車！`);
             if (document.getElementById('cartDrawer').classList.contains('show')) renderCartItems();
         }
@@ -1096,7 +1414,8 @@
 
     function removeFromCart(imei) {
         cart = cart.filter(item => item.imei !== imei); 
-        document.getElementById('cartCount').innerText = cart.length; renderCartItems(); 
+        document.getElementById('cartCount').innerText = cart.length; renderCartItems();
+        syncCartButtons();
     }
 
     function toggleCartDrawer() {
@@ -1129,13 +1448,34 @@
         }).join('');
     }
 
-    async function checkoutAndGenerateOrder() {
-        if (isCheckingOut) return; 
-
+    function checkoutAndGenerateOrder() {
+        if (isCheckingOut) return;
         if (cart.length === 0) { showToast('⚠️ 購物車內無商品！', 'warning'); return; }
         const selectedStore = document.getElementById('custStore').value;
         if (!selectedStore) { showToast('⚠️ 請選擇下單門市！', 'warning'); return; }
-        
+
+        document.getElementById('checkoutConfirmStore').innerText = selectedStore;
+        document.getElementById('checkoutConfirmCount').innerText = `${cart.length} 件`;
+        document.getElementById('checkoutConfirmItems').innerHTML = cart.map((item, index) => `
+            <div class="checkout-confirm-item">
+                <span>${index + 1}</span>
+                <div><strong>${escapeHtml(item.model || '未知品名')}</strong><small>IMEI / SN：${escapeHtml(item.imei || '-')}</small></div>
+            </div>`).join('');
+        document.getElementById('checkoutConfirmModal').style.display = 'flex';
+    }
+
+    function closeCheckoutConfirmModal() {
+        const modal = document.getElementById('checkoutConfirmModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function performCheckout() {
+        if (isCheckingOut) return;
+        if (cart.length === 0) { closeCheckoutConfirmModal(); showToast('⚠️ 購物車內無商品！', 'warning'); return; }
+        const selectedStore = document.getElementById('custStore').value;
+        if (!selectedStore) { closeCheckoutConfirmModal(); showToast('⚠️ 請選擇下單門市！', 'warning'); return; }
+
+        closeCheckoutConfirmModal();
         cart.sort((a, b) => (a.model || '').toString().localeCompare((b.model || '').toString(), 'zh-Hant'));
 
         const checkoutImeis = cart.map(item => item.imei);
@@ -1160,8 +1500,9 @@
                 msg += '系統將為您自動重置為最新庫存狀態。';
                 showToast(msg, 'error');
                 
-                cart = []; 
-                document.getElementById('cartCount').innerText = 0; 
+                cart = [];
+                document.getElementById('cartCount').innerText = 0;
+                syncCartButtons();
                 toggleCartDrawer(); 
                 refreshToLatest();
                 return; 
@@ -1176,6 +1517,8 @@
                 formData.append(FIELD_MODEL, `${item.brand} ${item.model}`); 
                 formData.append(FIELD_IMEI, item.imei);
                 formData.append(FIELD_REPAIR, item.repair_history || "無");                                          
+                
+                // 🌟 新增寫入 Google 表單的國際版本與螢幕烙印
                 formData.append(FIELD_VERSION, item.version || "-");
                 formData.append(FIELD_SCREEN_BURN, item.screen_burn || "-");
 
@@ -1207,8 +1550,8 @@
             const ws = XLSX.utils.aoa_to_sheet(orderRows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "下貨明細");
             XLSX.writeFile(wb, `出清下貨單_${selectedStore}_${new Date().toISOString().slice(0,10)}.xlsx`);
             
-            showToast(`🎉 訂單送出成功！系統將在 2 秒後自動重整...`);
-            cart = []; document.getElementById('cartCount').innerText = 0; toggleCartDrawer(); 
+            showToast(`🎉 訂單送出成功！可至「我的下單紀錄」查詢，系統將在 2 秒後自動重整...`);
+            cart = []; document.getElementById('cartCount').innerText = 0; syncCartButtons(); toggleCartDrawer(); 
             
             document.getElementById('custStore').value = ''; 
             document.getElementById('storeSelectTrigger').innerText = '-- 請選擇門市 --';
@@ -1233,150 +1576,235 @@
     }
 
     /* -----------------------------------------------------------
+       📋 V1.2 門市「我的下單紀錄」
+       - 不需新增 Supabase 欄位
+       - 以同門市 + 同 created_at 將同一批下單商品自動群組
+       - 網站訂單編號僅供本網站查詢識別，不等同公司出貨單號
+       ----------------------------------------------------------- */
+    function clearHistoryQuickActive() {
+        document.querySelectorAll('.history-quick-btn').forEach(btn => btn.classList.remove('active'));
+    }
+
+    function applyHistoryQuickRange(type, button) {
+        const now = new Date();
+        let start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        let end = new Date(start);
+
+        if (type === '7days') {
+            start.setDate(start.getDate() - 6);
+        } else if (type === 'month') {
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (type === 'lastMonth') {
+            start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth(), 0);
+        }
+
+        const pad = n => String(n).padStart(2, '0');
+        const toYmd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const startInput = document.getElementById('historyStartDate');
+        const endInput = document.getElementById('historyEndDate');
+        const startValue = toYmd(start);
+        const endValue = toYmd(end);
+        if (startInput._flatpickr) startInput._flatpickr.setDate(startValue, false); else startInput.value = startValue;
+        if (endInput._flatpickr) endInput._flatpickr.setDate(endValue, false); else endInput.value = endValue;
+
+        clearHistoryQuickActive();
+        if (button) button.classList.add('active');
+
+        if (document.getElementById('historyStoreSelect').value) queryStoreOrderHistory();
+    }
+
+    function setDefaultHistoryDateRange() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const pad = n => String(n).padStart(2, '0');
+        const toYmd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const startInput = document.getElementById('historyStartDate');
+        const endInput = document.getElementById('historyEndDate');
+        if (startInput && !startInput.value) {
+            if (startInput._flatpickr) startInput._flatpickr.setDate(toYmd(start), false);
+            else startInput.value = toYmd(start);
+        }
+        if (endInput && !endInput.value) {
+            if (endInput._flatpickr) endInput._flatpickr.setDate(toYmd(now), false);
+            else endInput.value = toYmd(now);
+        }
+    }
+
+    function openOrderHistoryModal() {
+        const modal = document.getElementById('orderHistoryModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeOrderHistoryModal() {
+        const modal = document.getElementById('orderHistoryModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function getTaipeiDateParts(dateValue) {
+        const d = new Date(dateValue);
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+        }).formatToParts(d);
+        const obj = {};
+        parts.forEach(p => { if (p.type !== 'literal') obj[p.type] = p.value; });
+        return obj;
+    }
+
+    function tinyHash(input) {
+        let h = 2166136261;
+        for (let i = 0; i < input.length; i++) {
+            h ^= input.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0).toString(36).toUpperCase().slice(-3).padStart(3, '0');
+    }
+
+    function makeWebsiteOrderNo(createdAt, store) {
+        if (!createdAt) return `D-UNKNOWN-${tinyHash(store || '')}`;
+        const p = getTaipeiDateParts(createdAt);
+        const date = `${p.year}${p.month}${p.day}`;
+        const time = `${p.hour}${p.minute}${p.second}`;
+        return `D${date}-${time}-${tinyHash(`${store}|${createdAt}`)}`;
+    }
+
+    function formatTaipeiDateTime(value) {
+        if (!value) return '無紀錄';
+        return new Date(value).toLocaleString('zh-TW', {
+            timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        });
+    }
+
+    function toggleHistoryOrderCard(el) {
+        el.classList.toggle('open');
+    }
+
+    async function queryStoreOrderHistory() {
+        const store = document.getElementById('historyStoreSelect').value;
+        const startDate = document.getElementById('historyStartDate').value;
+        const endDate = document.getElementById('historyEndDate').value;
+        const results = document.getElementById('historyResults');
+        const summary = document.getElementById('historySummary');
+
+        if (!store) {
+            showToast('⚠️ 請先選擇要查詢的門市！', 'warning');
+            return;
+        }
+        results.innerHTML = '<div class="history-loading">⏳ 正在讀取下單紀錄...</div>';
+        summary.classList.remove('show');
+
+        try {
+            let query = _supabase
+                .from('orders')
+                .select('created_at, store, model, imei, version, screen_burn, repair_history')
+                .eq('store', store)
+                .order('created_at', { ascending: false });
+
+            if (startDate) query = query.gte('created_at', `${startDate}T00:00:00+08:00`);
+            if (endDate) query = query.lte('created_at', `${endDate}T23:59:59.999+08:00`);
+
+            const { data: orderList, error } = await query;
+            if (error) throw error;
+
+            if (!orderList || orderList.length === 0) {
+                document.getElementById('historySummaryStore').innerText = store;
+                document.getElementById('historySummaryOrders').innerText = '0';
+                document.getElementById('historySummaryItems').innerText = '0';
+                summary.classList.add('show');
+                results.innerHTML = '<div class="history-empty">此門市在目前日期區間內沒有網站下單紀錄。</div>';
+                return;
+            }
+
+            const grouped = new Map();
+            orderList.forEach((order, index) => {
+                // 現行網站每次結帳會一次批次 insert；同一筆訂單的 created_at 會相同。
+                // 若舊資料缺 created_at，則個別列為獨立紀錄避免誤合併。
+                const key = order.created_at ? `${order.store}|${order.created_at}` : `${order.store}|legacy-${index}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        store: order.store || store,
+                        created_at: order.created_at,
+                        orderNo: makeWebsiteOrderNo(order.created_at, order.store || store),
+                        items: []
+                    });
+                }
+                grouped.get(key).items.push(order);
+            });
+
+            const groups = [...grouped.values()].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            document.getElementById('historySummaryStore').innerText = store;
+            document.getElementById('historySummaryOrders').innerText = groups.length;
+            document.getElementById('historySummaryItems').innerText = orderList.length;
+            summary.classList.add('show');
+
+            results.innerHTML = groups.map((group, groupIndex) => {
+                const itemsHtml = group.items.map(item => `
+                    <div class="history-item">
+                        <div class="history-item-model">${escapeHtml(item.model || '未知型號')}</div>
+                        <div><span class="history-meta-label">IMEI / SN</span><span class="history-meta-value">${escapeHtml(item.imei || '無')}</span></div>
+                        <div><span class="history-meta-label">國際版本</span><span class="history-meta-value">${escapeHtml(item.version || '-')}</span></div>
+                        <div><span class="history-meta-label">螢幕烙印</span><span class="history-meta-value">${escapeHtml(item.screen_burn || '-')}</span></div>
+                        <div class="history-repair"><strong>維修歷程：</strong>${escapeHtml(item.repair_history || '無')}</div>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="history-order-card ${groupIndex === 0 ? 'open' : ''}" onclick="toggleHistoryOrderCard(this)">
+                        <div class="history-order-head">
+                            <div class="history-order-no">${escapeHtml(group.orderNo)}</div>
+                            <div class="history-order-time">${escapeHtml(formatTaipeiDateTime(group.created_at))}</div>
+                            <div class="history-order-count">${group.items.length} 件商品</div>
+                            <div class="history-status">● 下單成功</div>
+                        </div>
+                        <div class="history-order-detail">${itemsHtml}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error(err);
+            results.innerHTML = '<div class="history-empty">❌ 讀取失敗，請稍後重新查詢或聯絡營運部-Tony。</div>';
+            showToast('❌ 下單紀錄讀取失敗！', 'error');
+        }
+    }
+
+    /* -----------------------------------------------------------
        ⚙️ 後台管理與 Excel 處理邏輯
        ----------------------------------------------------------- */
     function openAdminAuthModal() {
-        if (localStorage.getItem('admin_logged_in') === 'true') { 
+        if (adminUnlocked) {
             const panel = document.getElementById('adminPanel');
-            panel.style.display = panel.style.display === 'block' ? 'none' : 'block'; 
-        } else { 
-            document.getElementById('adminAuthModal').style.display = 'flex'; 
-            setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100); 
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        } else {
+            document.getElementById('adminAuthModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
         }
     }
     function closeAdminAuthModal() { document.getElementById('adminAuthModal').style.display = 'none'; document.getElementById('adminPasswordInput').value = ''; }
     function verifyAdminPassword() {
         if (document.getElementById('adminPasswordInput').value === '8888') {
-            localStorage.setItem('admin_logged_in', 'true'); document.getElementById('adminPanel').style.display = 'block'; closeAdminAuthModal(); showToast('🔓 權限解鎖！');
+            adminUnlocked = true;
+            document.getElementById('adminPanel').style.display = 'block';
+            closeAdminAuthModal();
+            showToast('🔓 權限解鎖！重新整理網頁後會自動鎖定。');
         } else { showToast('❌ 密碼錯誤！', 'error'); }
     }
-    function checkLocalLoginState() { if (localStorage.getItem('admin_logged_in') === 'true') document.getElementById('adminPanel').style.display = 'block'; }
-    function lockAdminPanel() { localStorage.removeItem('admin_logged_in'); document.getElementById('adminPanel').style.display = 'none'; showToast('🔒 已鎖定！', 'warning'); }
+    function lockAdminPanel() {
+        adminUnlocked = false;
+        document.getElementById('adminPanel').style.display = 'none';
+        showToast('🔒 已鎖定！', 'warning');
+    }
     function closeModalsOnOutsideClick(event, id) { if (event.target.id === id) document.getElementById(id).style.display = 'none'; }
-
-    // 🌟 抓取門市清單 (加入 sort_order 排序)
-    async function fetchStoresFromSupabase() {
-        try {
-            const { data, error } = await _supabase.from('stores').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
-            if (error) throw error;
-            storeList = data || [];
-            renderStoreDropdown();
-            renderAdminStoreList();
-        } catch (err) {
-            console.error("載入門市失敗", err);
-        }
-    }
-
-    // 動態生成購物車下拉選單
-    function renderStoreDropdown() {
-        const optionsDiv = document.getElementById('storeSelectOptions');
-        optionsDiv.innerHTML = '';
-        storeList.forEach(store => {
-            optionsDiv.innerHTML += `<div class="custom-select-item" onclick="selectStore('${escapeHtmlJS(store.name)}', event)">${store.name}</div>`;
-        });
-    }
-
-    // 🌟 動態生成後台管理的門市清單 (加入上下移動與編輯按鈕)
-    function renderAdminStoreList() {
-        const listDiv = document.getElementById('adminStoreList');
-        if (storeList.length === 0) {
-            listDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">目前無門市資料</div>';
-            return;
-        }
-        listDiv.innerHTML = storeList.map((store, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--border-light); font-size: 13px; color: var(--text-main);">
-                <span style="flex: 1; font-weight: 500;">${store.name}</span>
-                <div style="display: flex; gap: 4px;">
-                    <button onclick="moveStore(${index}, -1)" class="mac-btn btn-gray" style="height: 24px; padding: 0 6px; font-size: 12px; border-radius: 4px;" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>↑</button>
-                    <button onclick="moveStore(${index}, 1)" class="mac-btn btn-gray" style="height: 24px; padding: 0 6px; font-size: 12px; border-radius: 4px;" ${index === storeList.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>↓</button>
-                    <button onclick="editStore(${store.id}, '${escapeHtmlJS(store.name)}')" class="mac-btn btn-blue" style="height: 24px; padding: 0 8px; font-size: 11px; border-radius: 4px;">編輯</button>
-                    <button onclick="deleteStore(${store.id})" class="mac-btn btn-red" style="height: 24px; padding: 0 8px; font-size: 11px; border-radius: 4px;">刪除</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // 新增門市
-    async function addNewStore() {
-        const input = document.getElementById('newStoreInput');
-        const storeName = input.value.trim();
-        if (!storeName) { showToast('⚠️ 請輸入門市名稱！', 'warning'); return; }
-        if (storeList.some(s => s.name === storeName)) { showToast('⚠️ 此門市已存在！', 'warning'); return; }
-
-        try {
-            const newOrder = storeList.length > 0 ? Math.max(...storeList.map(s => s.sort_order || 0)) + 1 : 0;
-            const { error } = await _supabase.from('stores').insert([{ name: storeName, sort_order: newOrder }]);
-            if (error) throw error;
-            showToast(`🎉 已新增門市：${storeName}`);
-            input.value = '';
-            fetchStoresFromSupabase(); 
-        } catch (err) {
-            showToast('❌ 新增失敗，請檢查網路連線', 'error');
-            console.error(err);
-        }
-    }
-
-    // 🌟 編輯門市
-    async function editStore(id, oldName) {
-        const newName = prompt('請輸入新的門市名稱：', oldName);
-        if (!newName || newName.trim() === '' || newName === oldName) return;
-
-        try {
-            const { error } = await _supabase.from('stores').update({ name: newName.trim() }).eq('id', id);
-            if (error) throw error;
-            showToast(`✏️ 門市已更名為：${newName}`);
-            fetchStoresFromSupabase();
-        } catch (err) {
-            showToast('❌ 更名失敗', 'error');
-            console.error(err);
-        }
-    }
-
-    // 🌟 移動門市排列順序
-    async function moveStore(currentIndex, direction) {
-        const targetIndex = currentIndex + direction;
-        if (targetIndex < 0 || targetIndex >= storeList.length) return;
-
-        // 在畫面上交換順序
-        const temp = storeList[currentIndex];
-        storeList[currentIndex] = storeList[targetIndex];
-        storeList[targetIndex] = temp;
-
-        // 重新分配所有的 sort_order (確保正確無誤)
-        const updates = storeList.map((store, i) => {
-            store.sort_order = i;
-            return _supabase.from('stores').update({ sort_order: i }).eq('id', store.id);
-        });
-
-        // 畫面先更新，提供流暢體驗
-        renderAdminStoreList();
-        renderStoreDropdown();
-
-        // 背景同步至資料庫
-        Promise.all(updates).catch(err => console.error("排序更新失敗", err));
-    }
-
-    // 刪除門市
-    async function deleteStore(id) {
-        if(!confirm('確定要移除此門市嗎？')) return;
-        try {
-            const { error } = await _supabase.from('stores').delete().eq('id', id);
-            if (error) throw error;
-            showToast(`🗑️ 門市已移除`);
-            
-            const deletedStore = storeList.find(s => s.id === id);
-            if(deletedStore && document.getElementById('custStore').value === deletedStore.name) {
-                document.getElementById('custStore').value = '';
-                document.getElementById('storeSelectTrigger').innerText = '-- 請選擇門市 --';
-                document.getElementById('storeSelectTrigger').classList.remove('has-value');
-            }
-
-            fetchStoresFromSupabase();
-        } catch (err) {
-            showToast('❌ 刪除失敗', 'error');
-            console.error(err);
-        }
-    }
 
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
