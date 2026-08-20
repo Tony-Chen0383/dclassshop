@@ -1631,7 +1631,41 @@
         }
     }
 
+    function resetOrderHistoryModalState() {
+        const storeSelect = document.getElementById('historyStoreSelect');
+        const startInput = document.getElementById('historyStartDate');
+        const endInput = document.getElementById('historyEndDate');
+        const summary = document.getElementById('historySummary');
+        const summaryStore = document.getElementById('historySummaryStore');
+        const summaryOrders = document.getElementById('historySummaryOrders');
+        const summaryItems = document.getElementById('historySummaryItems');
+        const results = document.getElementById('historyResults');
+
+        if (storeSelect) storeSelect.value = '';
+
+        if (startInput) {
+            if (startInput._flatpickr) startInput._flatpickr.clear();
+            startInput.value = '';
+        }
+        if (endInput) {
+            if (endInput._flatpickr) endInput._flatpickr.clear();
+            endInput.value = '';
+        }
+        setDefaultHistoryDateRange();
+
+        clearHistoryQuickActive();
+        const defaultQuickBtn = Array.from(document.querySelectorAll('.history-quick-btn')).find(btn => btn.textContent.trim() === '本月');
+        if (defaultQuickBtn) defaultQuickBtn.classList.add('active');
+
+        if (summary) summary.classList.remove('show');
+        if (summaryStore) summaryStore.innerText = '-';
+        if (summaryOrders) summaryOrders.innerText = '0';
+        if (summaryItems) summaryItems.innerText = '0';
+        if (results) results.innerHTML = '<div class="history-empty">請先選擇門市，再按「查詢」查看歷史下單紀錄。</div>';
+    }
+
     function openOrderHistoryModal() {
+        resetOrderHistoryModalState();
         const modal = document.getElementById('orderHistoryModal');
         modal.style.display = 'flex';
     }
@@ -1639,6 +1673,7 @@
     function closeOrderHistoryModal() {
         const modal = document.getElementById('orderHistoryModal');
         if (modal) modal.style.display = 'none';
+        resetOrderHistoryModalState();
     }
 
     function escapeHtml(str) {
@@ -1804,7 +1839,18 @@
         document.getElementById('adminPanel').style.display = 'none';
         showToast('🔒 已鎖定！', 'warning');
     }
-    function closeModalsOnOutsideClick(event, id) { if (event.target.id === id) document.getElementById(id).style.display = 'none'; }
+    function closeModalsOnOutsideClick(event, id) {
+        if (event.target.id !== id) return;
+        if (id === 'orderHistoryModal') {
+            closeOrderHistoryModal();
+            return;
+        }
+        if (id === 'checkoutConfirmModal') {
+            closeCheckoutConfirmModal();
+            return;
+        }
+        document.getElementById(id).style.display = 'none';
+    }
 
     function handleFileRead() {
         const fileInput = document.getElementById('excelFileInput');
