@@ -295,7 +295,7 @@
 
 
         /* ==================================================================
-           🏪 V1.3.3 後台門市主檔管理
+           🏪 V1.3.4 後台門市主檔管理
            ================================================================== */
         .store-master-box {
             border-top: 1px solid var(--border-light); padding-top: 16px; margin-top: 16px;
@@ -346,6 +346,9 @@
         }
         .store-mini-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
         .store-mini-btn:disabled { opacity: .28; cursor: not-allowed; }
+        .store-mini-btn.edit { width: 42px; font-size: 11px; }
+        .store-mini-btn.edit:hover:not(:disabled) { border-color: #34c759; color: #248a3d; }
+        [data-theme="dark"] .store-mini-btn.edit:hover:not(:disabled) { color: #32d74b; }
         .store-mini-btn.delete:hover:not(:disabled) { border-color: #ff3b30; color: #ff3b30; }
         .store-master-note {
             margin-top: 8px; color: var(--text-muted); font-size: 11px; line-height: 1.5;
@@ -565,7 +568,12 @@
         .history-item-model { font-weight: 800; line-height: 1.4; }
         .history-meta-label { display: block; color: var(--text-muted); font-size: 11px; font-weight: 700; margin-bottom: 3px; }
         .history-meta-value { font-size: 13px; color: var(--text-main); word-break: break-all; }
-        .history-repair { grid-column: 1 / -1; padding-top: 2px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .history-repair {
+            grid-column: 1 / -1; padding-top: 4px; font-size: 15px; color: #ff3b30;
+            line-height: 1.55; font-weight: 800; letter-spacing: .01em; user-select: text;
+        }
+        .history-repair strong { color: inherit; font-weight: 900; }
+        [data-theme="dark"] .history-repair { color: #ff453a; }
         .history-empty {
             padding: 36px 16px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-light);
             border-radius: var(--radius-lg); background: var(--bg-card); line-height: 1.8;
@@ -686,7 +694,7 @@
         <div class="sticky-wrapper">
             <div class="header-bar">
                 <div class="title-group" onclick="refreshToLatest()" title="點擊重新整理最新庫存">
-                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3.3</span></h1>
+                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3.4</span></h1>
                     <div class="sub-title">本區僅限販售「D級出清品」，有任何問題請洽營運部-Tony</div>
                 </div>
                 <div class="header-actions">
@@ -773,7 +781,7 @@
                 <button onclick="handleRepairFileRead()" class="mac-btn btn-green btn-sm" id="btnImportRepair" style="width: 100%;">匯入維修紀錄</button>
             </div>
 
-            <!-- 🏪 V1.3.3 門市主檔管理 -->
+            <!-- 🏪 V1.3.4 門市主檔管理 -->
             <div class="store-master-box" id="storeMasterBox">
                 <div class="store-master-title-row">
                     <div class="store-master-title">🏪 門市管理</div>
@@ -784,7 +792,7 @@
                     <button class="mac-btn btn-blue btn-sm" onclick="addStoreFromAdmin()">＋ 新增</button>
                 </div>
                 <div class="store-master-list" id="storeMasterList"></div>
-                <div class="store-master-note">可新增、刪除與調整門市順序；儲存後會同步套用到「下單門市」與「我的下單紀錄」。</div>
+                <div class="store-master-note">可新增、改名、刪除與調整門市順序；變更後會同步套用到「下單門市」與「我的下單紀錄」。門市改名時也會同步更新網站歷史下單紀錄。</div>
             </div>
         </div>
 
@@ -909,7 +917,7 @@
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
                     <div class="custom-select-options" id="storeSelectOptions">
-                        <!-- 門市清單由 V1.3.3 門市主檔動態產生 -->
+                        <!-- 門市清單由 V1.3.4 門市主檔動態產生 -->
                     </div>
                     <input type="hidden" id="custStore" value="">
                 </div>
@@ -937,7 +945,7 @@
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
 
-    // V1.3.3：門市主檔（以既有 orders 表保存系統設定，不需新增資料表）
+    // V1.3.4：門市主檔（以既有 orders 表保存系統設定，不需新增資料表）
     const DEFAULT_STORES = [
         '台北光華', '桃園站前', '桃園NOVA', '中壢旗艦', '中壢站前', '中壢NOVA',
         '新竹站前', '台中站前', '台中NOVA', '東海NOVA', '台南彩虹3C', '高雄NOVA'
@@ -966,7 +974,7 @@
     }
 
     /* -----------------------------------------------------------
-       🏪 V1.3.3 門市主檔管理
+       🏪 V1.3.4 門市主檔管理
        - 使用既有 Supabase orders 表保存「系統設定紀錄」
        - 不新增資料表；歷史訂單匯出會自動排除此設定紀錄
        ----------------------------------------------------------- */
@@ -1034,6 +1042,7 @@
                 <div class="store-master-order">${index + 1}</div>
                 <div class="store-master-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                 <div class="store-master-actions">
+                    <button class="store-mini-btn edit" onclick="renameStoreFromAdmin(${index})" title="修改門市名稱">✎ 改名</button>
                     <button class="store-mini-btn" ${index === 0 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, -1)" title="上移">↑</button>
                     <button class="store-mini-btn" ${index === storeList.length - 1 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, 1)" title="下移">↓</button>
                     <button class="store-mini-btn delete" onclick="removeStoreFromAdmin(${index})" title="刪除">✕</button>
@@ -1121,6 +1130,80 @@
         const next = [...storeList, name];
         const ok = await saveStoreMasterToCloud(next, `✅ 已新增門市：${name}`);
         if (ok && input) input.value = '';
+    }
+
+    async function renameStoreFromAdmin(index) {
+        if (storeMasterSaving) return;
+        const oldName = storeList[index];
+        if (!oldName) return;
+
+        const inputValue = window.prompt('請輸入新的門市名稱：', oldName);
+        if (inputValue === null) return;
+        const newName = String(inputValue || '').trim();
+
+        if (!newName) {
+            showToast('⚠️ 門市名稱不能空白！', 'warning');
+            return;
+        }
+        if (newName === oldName) return;
+        if (storeList.includes(newName)) {
+            showToast('⚠️ 已有相同名稱的門市！', 'warning');
+            return;
+        }
+
+        const previous = [...storeList];
+        const next = [...storeList];
+        next[index] = newName;
+
+        try {
+            setStoreMasterBusy(true);
+            storeList = normalizeStoreList(next);
+            renderStoreSelectors();
+            renderAdminStoreList();
+
+            // 先保存新的門市主檔設定
+            const { error: configError } = await _supabase.from('orders').insert([{
+                store: STORE_CONFIG_STORE,
+                model: JSON.stringify(storeList),
+                imei: STORE_CONFIG_IMEI,
+                version: '-',
+                screen_burn: '-',
+                repair_history: '系統門市主檔設定'
+            }]);
+            if (configError) throw configError;
+
+            // 同步更新網站內既有歷史下單紀錄，避免改名後舊訂單查不到
+            const { error: historyError } = await _supabase
+                .from('orders')
+                .update({ store: newName })
+                .eq('store', oldName)
+                .neq('imei', STORE_CONFIG_IMEI);
+            if (historyError) throw historyError;
+
+            resetCheckoutStoreSelection();
+            resetOrderHistoryModalState();
+            showToast(`✅ 門市已改名：${oldName} → ${newName}`, 'success');
+        } catch (err) {
+            console.error('門市改名失敗：', err);
+            storeList = previous;
+            renderStoreSelectors();
+            renderAdminStoreList();
+
+            // 若新主檔已先寫入，補寫舊設定作為最新版本以完成回復
+            try {
+                await _supabase.from('orders').insert([{
+                    store: STORE_CONFIG_STORE,
+                    model: JSON.stringify(previous),
+                    imei: STORE_CONFIG_IMEI,
+                    version: '-',
+                    screen_burn: '-',
+                    repair_history: '系統門市主檔設定（改名失敗回復）'
+                }]);
+            } catch (_) {}
+            showToast('❌ 門市改名失敗，已還原原本名稱。', 'error');
+        } finally {
+            setStoreMasterBusy(false);
+        }
     }
 
     async function removeStoreFromAdmin(index) {
