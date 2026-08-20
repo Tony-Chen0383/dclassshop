@@ -293,6 +293,67 @@
         .custom-file-upload label { height: 28px; padding: 0 10px; font-size: 12px; border-radius: var(--radius-sm); flex-shrink: 0; margin: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box;}
         .custom-file-upload span { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
+
+        /* ==================================================================
+           🏪 V1.3.2 後台門市主檔管理
+           ================================================================== */
+        .store-master-box {
+            border-top: 1px solid var(--border-light); padding-top: 16px; margin-top: 16px;
+        }
+        .store-master-title-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;
+        }
+        .store-master-title {
+            font-weight: 700; color: var(--text-main); font-size: 13px;
+        }
+        .store-master-count {
+            color: var(--text-muted); font-size: 12px; font-weight: 600;
+        }
+        .store-master-add {
+            display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px;
+        }
+        .store-master-input {
+            width: 100%; height: 36px; border-radius: var(--radius-sm); padding: 0 10px;
+            background: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-main);
+            font-family: inherit; font-size: 13px; font-weight: 600; outline: none;
+        }
+        .store-master-input:focus {
+            border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.18);
+        }
+        .store-master-list {
+            display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto;
+            padding-right: 2px;
+        }
+        .store-master-item {
+            display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 8px; align-items: center;
+            background: var(--bg-input); border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+            padding: 7px 8px;
+        }
+        .store-master-order {
+            width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-muted);
+            font-size: 11px; font-weight: 800;
+        }
+        .store-master-name {
+            min-width: 0; color: var(--text-main); font-size: 13px; font-weight: 700;
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+        }
+        .store-master-actions { display: flex; align-items: center; gap: 4px; }
+        .store-mini-btn {
+            width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border-light);
+            background: var(--bg-card); color: var(--text-main); cursor: pointer; font-size: 12px; font-weight: 800;
+            display: inline-flex; align-items: center; justify-content: center; transition: all .15s ease;
+        }
+        .store-mini-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+        .store-mini-btn:disabled { opacity: .28; cursor: not-allowed; }
+        .store-mini-btn.delete:hover:not(:disabled) { border-color: #ff3b30; color: #ff3b30; }
+        .store-master-note {
+            margin-top: 8px; color: var(--text-muted); font-size: 11px; line-height: 1.5;
+        }
+        .store-master-saving {
+            opacity: .55; pointer-events: none;
+        }
+
         /* ==================================================================
            🖼️ 7. 商品卡與虛擬滾動排版
            ================================================================== */
@@ -625,7 +686,7 @@
         <div class="sticky-wrapper">
             <div class="header-bar">
                 <div class="title-group" onclick="refreshToLatest()" title="點擊重新整理最新庫存">
-                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3</span></h1>
+                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3.2</span></h1>
                     <div class="sub-title">本區僅限販售「D級出清品」，有任何問題請洽營運部-Tony</div>
                 </div>
                 <div class="header-actions">
@@ -711,6 +772,20 @@
                 </div>
                 <button onclick="handleRepairFileRead()" class="mac-btn btn-green btn-sm" id="btnImportRepair" style="width: 100%;">匯入維修紀錄</button>
             </div>
+
+            <!-- 🏪 V1.3.2 門市主檔管理 -->
+            <div class="store-master-box" id="storeMasterBox">
+                <div class="store-master-title-row">
+                    <div class="store-master-title">🏪 門市管理</div>
+                    <div class="store-master-count" id="storeMasterCount">0 間</div>
+                </div>
+                <div class="store-master-add">
+                    <input type="text" id="newStoreName" class="store-master-input" placeholder="輸入新門市名稱" maxlength="30" onkeydown="if(event.key==='Enter'){event.preventDefault();addStoreFromAdmin();}">
+                    <button class="mac-btn btn-blue btn-sm" onclick="addStoreFromAdmin()">＋ 新增</button>
+                </div>
+                <div class="store-master-list" id="storeMasterList"></div>
+                <div class="store-master-note">可新增、刪除與調整門市順序；儲存後會同步套用到「下單門市」與「我的下單紀錄」。</div>
+            </div>
         </div>
 
         <!-- 🌟 商品網格 (局部滾動區域) -->
@@ -759,18 +834,6 @@
                         <label for="historyStoreSelect">下單門市 *</label>
                         <select id="historyStoreSelect" class="history-select">
                             <option value="">-- 請選擇門市 --</option>
-                            <option value="台北光華">台北光華</option>
-                            <option value="桃園站前">桃園站前</option>
-                            <option value="桃園NOVA">桃園NOVA</option>
-                            <option value="中壢旗艦">中壢旗艦</option>
-                            <option value="中壢站前">中壢站前</option>
-                            <option value="中壢NOVA">中壢NOVA</option>
-                            <option value="新竹站前">新竹站前</option>
-                            <option value="台中站前">台中站前</option>
-                            <option value="台中NOVA">台中NOVA</option>
-                            <option value="東海NOVA">東海NOVA</option>
-                            <option value="台南彩虹3C">台南彩虹3C</option>
-                            <option value="高雄NOVA">高雄NOVA</option>
                         </select>
                     </div>
                     <div class="history-field">
@@ -846,18 +909,7 @@
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
                     <div class="custom-select-options" id="storeSelectOptions">
-                        <div class="custom-select-item" onclick="selectStore('台北光華', event)">台北光華</div>
-                        <div class="custom-select-item" onclick="selectStore('桃園站前', event)">桃園站前</div>
-                        <div class="custom-select-item" onclick="selectStore('桃園NOVA', event)">桃園NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢旗艦', event)">中壢旗艦</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢站前', event)">中壢站前</div>
-                        <div class="custom-select-item" onclick="selectStore('中壢NOVA', event)">中壢NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('新竹站前', event)">新竹站前</div>
-                        <div class="custom-select-item" onclick="selectStore('台中站前', event)">台中站前</div>
-                        <div class="custom-select-item" onclick="selectStore('台中NOVA', event)">台中NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('東海NOVA', event)">東海NOVA</div>
-                        <div class="custom-select-item" onclick="selectStore('台南彩虹3C', event)">台南彩虹3C</div>
-                        <div class="custom-select-item" onclick="selectStore('高雄NOVA', event)">高雄NOVA</div>
+                        <!-- 門市清單由 V1.3.2 門市主檔動態產生 -->
                     </div>
                     <input type="hidden" id="custStore" value="">
                 </div>
@@ -884,6 +936,16 @@
 
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
+
+    // V1.3.2：門市主檔（以既有 orders 表保存系統設定，不需新增資料表）
+    const DEFAULT_STORES = [
+        '台北光華', '桃園站前', '桃園NOVA', '中壢旗艦', '中壢站前', '中壢NOVA',
+        '新竹站前', '台中站前', '台中NOVA', '東海NOVA', '台南彩虹3C', '高雄NOVA'
+    ];
+    const STORE_CONFIG_IMEI = '__DCLASS_STORE_CONFIG__';
+    const STORE_CONFIG_STORE = '__SYSTEM_STORE_CONFIG__';
+    let storeList = [...DEFAULT_STORES];
+    let storeMasterSaving = false;
     
     const BATCH_SIZE = 30; 
     let currentRenderCount = 0;
@@ -901,6 +963,186 @@
             .replace(/"/g, "&quot;")
             .replace(/\n/g, "\\n")
             .replace(/\r/g, "\\r");
+    }
+
+    /* -----------------------------------------------------------
+       🏪 V1.3.2 門市主檔管理
+       - 使用既有 Supabase orders 表保存「系統設定紀錄」
+       - 不新增資料表；歷史訂單匯出會自動排除此設定紀錄
+       ----------------------------------------------------------- */
+    function normalizeStoreList(list) {
+        if (!Array.isArray(list)) return [...DEFAULT_STORES];
+        const seen = new Set();
+        const cleaned = [];
+        list.forEach(item => {
+            const name = String(item || '').trim();
+            if (!name || seen.has(name)) return;
+            seen.add(name);
+            cleaned.push(name);
+        });
+        return cleaned.length ? cleaned : [...DEFAULT_STORES];
+    }
+
+    function renderStoreSelectors() {
+        storeList = normalizeStoreList(storeList);
+
+        const historySelect = document.getElementById('historyStoreSelect');
+        if (historySelect) {
+            const previous = historySelect.value;
+            historySelect.innerHTML = '<option value="">-- 請選擇門市 --</option>' +
+                storeList.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+            historySelect.value = storeList.includes(previous) ? previous : '';
+        }
+
+        const checkoutOptions = document.getElementById('storeSelectOptions');
+        if (checkoutOptions) {
+            checkoutOptions.innerHTML = '';
+            storeList.forEach(name => {
+                const item = document.createElement('div');
+                item.className = 'custom-select-item';
+                item.textContent = name;
+                item.addEventListener('click', (event) => selectStore(name, event));
+                checkoutOptions.appendChild(item);
+            });
+        }
+
+        const currentStore = document.getElementById('custStore')?.value || '';
+        if (currentStore && !storeList.includes(currentStore)) {
+            resetCheckoutStoreSelection();
+        }
+    }
+
+    function resetCheckoutStoreSelection() {
+        const hidden = document.getElementById('custStore');
+        const trigger = document.getElementById('storeSelectTrigger');
+        if (hidden) hidden.value = '';
+        if (trigger) {
+            trigger.innerText = '-- 請選擇門市 --';
+            trigger.classList.remove('has-value');
+        }
+        document.querySelectorAll('#storeSelectOptions .custom-select-item').forEach(i => i.classList.remove('selected'));
+    }
+
+    function renderAdminStoreList() {
+        const listEl = document.getElementById('storeMasterList');
+        const countEl = document.getElementById('storeMasterCount');
+        if (!listEl) return;
+        if (countEl) countEl.innerText = `${storeList.length} 間`;
+
+        listEl.innerHTML = storeList.map((name, index) => `
+            <div class="store-master-item">
+                <div class="store-master-order">${index + 1}</div>
+                <div class="store-master-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                <div class="store-master-actions">
+                    <button class="store-mini-btn" ${index === 0 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, -1)" title="上移">↑</button>
+                    <button class="store-mini-btn" ${index === storeList.length - 1 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, 1)" title="下移">↓</button>
+                    <button class="store-mini-btn delete" onclick="removeStoreFromAdmin(${index})" title="刪除">✕</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function setStoreMasterBusy(isBusy) {
+        storeMasterSaving = isBusy;
+        const box = document.getElementById('storeMasterBox');
+        if (box) box.classList.toggle('store-master-saving', isBusy);
+    }
+
+    async function loadStoreMasterFromCloud() {
+        try {
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('created_at, model, imei, store')
+                .eq('imei', STORE_CONFIG_IMEI)
+                .order('created_at', { ascending: false })
+                .limit(1);
+            if (error) throw error;
+            if (data && data.length && data[0].model) {
+                const parsed = JSON.parse(data[0].model);
+                storeList = normalizeStoreList(parsed);
+            } else {
+                storeList = [...DEFAULT_STORES];
+            }
+        } catch (err) {
+            console.warn('門市主檔讀取失敗，改用預設門市清單：', err);
+            storeList = [...DEFAULT_STORES];
+        }
+        renderStoreSelectors();
+        renderAdminStoreList();
+    }
+
+    async function saveStoreMasterToCloud(nextList, successMessage) {
+        if (storeMasterSaving) return false;
+        const previous = [...storeList];
+        const normalized = normalizeStoreList(nextList);
+
+        try {
+            setStoreMasterBusy(true);
+            storeList = normalized;
+            renderStoreSelectors();
+            renderAdminStoreList();
+
+            const { error } = await _supabase.from('orders').insert([{
+                store: STORE_CONFIG_STORE,
+                model: JSON.stringify(storeList),
+                imei: STORE_CONFIG_IMEI,
+                version: '-',
+                screen_burn: '-',
+                repair_history: '系統門市主檔設定'
+            }]);
+            if (error) throw error;
+            showToast(successMessage || '✅ 門市設定已更新！', 'success');
+            return true;
+        } catch (err) {
+            console.error('門市主檔儲存失敗：', err);
+            storeList = previous;
+            renderStoreSelectors();
+            renderAdminStoreList();
+            showToast('❌ 門市設定儲存失敗，已還原原本設定。', 'error');
+            return false;
+        } finally {
+            setStoreMasterBusy(false);
+        }
+    }
+
+    async function addStoreFromAdmin() {
+        const input = document.getElementById('newStoreName');
+        const name = String(input?.value || '').trim();
+        if (!name) {
+            showToast('⚠️ 請輸入門市名稱！', 'warning');
+            input?.focus();
+            return;
+        }
+        if (storeList.includes(name)) {
+            showToast('⚠️ 此門市已存在！', 'warning');
+            input?.focus();
+            return;
+        }
+        const next = [...storeList, name];
+        const ok = await saveStoreMasterToCloud(next, `✅ 已新增門市：${name}`);
+        if (ok && input) input.value = '';
+    }
+
+    async function removeStoreFromAdmin(index) {
+        if (storeMasterSaving) return;
+        const name = storeList[index];
+        if (!name) return;
+        if (storeList.length <= 1) {
+            showToast('⚠️ 至少要保留 1 間門市！', 'warning');
+            return;
+        }
+        if (!window.confirm(`確定要刪除「${name}」嗎？\n刪除後不會影響過去已存在的歷史訂單。`)) return;
+        const next = storeList.filter((_, i) => i !== index);
+        await saveStoreMasterToCloud(next, `✅ 已移除門市：${name}`);
+    }
+
+    async function moveStoreFromAdmin(index, direction) {
+        if (storeMasterSaving) return;
+        const target = index + direction;
+        if (target < 0 || target >= storeList.length) return;
+        const next = [...storeList];
+        [next[index], next[target]] = [next[target], next[index]];
+        await saveStoreMasterToCloud(next, '✅ 門市順序已更新！');
     }
 
     /* -----------------------------------------------------------
@@ -1020,6 +1262,9 @@
         adminUnlocked = false;
         document.getElementById('adminPanel').style.display = 'none';
         loadSavedFilters(); 
+        renderStoreSelectors();
+        renderAdminStoreList();
+        loadStoreMasterFromCloud();
         fetchProductsFromSupabase(); 
         
         flatpickr("#exportStartDate", flatpickrConfig);
@@ -1553,10 +1798,7 @@
             showToast(`🎉 訂單送出成功！可至「我的下單紀錄」查詢，系統將在 2 秒後自動重整...`);
             cart = []; document.getElementById('cartCount').innerText = 0; syncCartButtons(); toggleCartDrawer(); 
             
-            document.getElementById('custStore').value = ''; 
-            document.getElementById('storeSelectTrigger').innerText = '-- 請選擇門市 --';
-            document.getElementById('storeSelectTrigger').classList.remove('has-value');
-            document.querySelectorAll('#storeSelectOptions .custom-select-item').forEach(i => i.classList.remove('selected'));
+            resetCheckoutStoreSelection();
 
             setTimeout(() => {
                 window.location.reload();
@@ -1744,6 +1986,7 @@
                 .from('orders')
                 .select('created_at, store, model, imei, version, screen_burn, repair_history')
                 .eq('store', store)
+                .neq('imei', STORE_CONFIG_IMEI)
                 .order('created_at', { ascending: false });
 
             if (startDate) query = query.gte('created_at', `${startDate}T00:00:00+08:00`);
@@ -1819,6 +2062,7 @@
     function openAdminAuthModal() {
         if (adminUnlocked) {
             const panel = document.getElementById('adminPanel');
+            renderAdminStoreList();
             panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         } else {
             document.getElementById('adminAuthModal').style.display = 'flex';
@@ -1829,6 +2073,7 @@
     function verifyAdminPassword() {
         if (document.getElementById('adminPasswordInput').value === '8888') {
             adminUnlocked = true;
+            renderAdminStoreList();
             document.getElementById('adminPanel').style.display = 'block';
             closeAdminAuthModal();
             showToast('🔓 權限解鎖！重新整理網頁後會自動鎖定。');
@@ -1944,7 +2189,7 @@
 
     async function downloadOrdersOnlyNameAndImei() {
         try {
-            let query = _supabase.from('orders').select('created_at, store, model, imei, version, screen_burn, repair_history').order('created_at', { ascending: true });
+            let query = _supabase.from('orders').select('created_at, store, model, imei, version, screen_burn, repair_history').neq('imei', STORE_CONFIG_IMEI).order('created_at', { ascending: true });
             const startDate = document.getElementById('exportStartDate').value; const endDate = document.getElementById('exportEndDate').value;
             if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`); if (endDate) query = query.lte('created_at', `${endDate}T23:59:59.999`);
             const { data: orderList, error } = await query;
