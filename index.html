@@ -295,7 +295,7 @@
 
 
         /* ==================================================================
-           🏪 V1.3.4 後台門市主檔管理
+           🏪 V1.3.5 後台門市主檔管理
            ================================================================== */
         .store-master-box {
             border-top: 1px solid var(--border-light); padding-top: 16px; margin-top: 16px;
@@ -694,7 +694,7 @@
         <div class="sticky-wrapper">
             <div class="header-bar">
                 <div class="title-group" onclick="refreshToLatest()" title="點擊重新整理最新庫存">
-                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3.4</span></h1>
+                    <h1>📱 出清品直購專區 <span style="font-size: 14px; color: var(--blue); font-weight: normal; margin-left: 8px;">V1.3.5</span></h1>
                     <div class="sub-title">本區僅限販售「D級出清品」，有任何問題請洽營運部-Tony</div>
                 </div>
                 <div class="header-actions">
@@ -781,7 +781,7 @@
                 <button onclick="handleRepairFileRead()" class="mac-btn btn-green btn-sm" id="btnImportRepair" style="width: 100%;">匯入維修紀錄</button>
             </div>
 
-            <!-- 🏪 V1.3.4 門市主檔管理 -->
+            <!-- 🏪 V1.3.5 門市主檔管理 -->
             <div class="store-master-box" id="storeMasterBox">
                 <div class="store-master-title-row">
                     <div class="store-master-title">🏪 門市管理</div>
@@ -917,7 +917,7 @@
                 <div class="custom-select-container" id="storeSelectContainer">
                     <div class="custom-select-trigger" id="storeSelectTrigger" onclick="toggleStoreDropdown(event)">-- 請選擇門市 --</div>
                     <div class="custom-select-options" id="storeSelectOptions">
-                        <!-- 門市清單由 V1.3.4 門市主檔動態產生 -->
+                        <!-- 門市清單由 V1.3.5 門市主檔動態產生 -->
                     </div>
                     <input type="hidden" id="custStore" value="">
                 </div>
@@ -945,7 +945,7 @@
     let allProducts = [], cart = [], filteredProductsCache = [];
     let selectedBrands = [], selectedSubCategories = [], selectedRepairs = [];
 
-    // V1.3.4：門市主檔（以既有 orders 表保存系統設定，不需新增資料表）
+    // V1.3.5：門市主檔（以既有 orders 表保存系統設定，不需新增資料表）
     const DEFAULT_STORES = [
         '台北光華', '桃園站前', '桃園NOVA', '中壢旗艦', '中壢站前', '中壢NOVA',
         '新竹站前', '台中站前', '台中NOVA', '東海NOVA', '台南彩虹3C', '高雄NOVA'
@@ -974,7 +974,7 @@
     }
 
     /* -----------------------------------------------------------
-       🏪 V1.3.4 門市主檔管理
+       🏪 V1.3.5 門市主檔管理
        - 使用既有 Supabase orders 表保存「系統設定紀錄」
        - 不新增資料表；歷史訂單匯出會自動排除此設定紀錄
        ----------------------------------------------------------- */
@@ -1042,7 +1042,7 @@
                 <div class="store-master-order">${index + 1}</div>
                 <div class="store-master-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                 <div class="store-master-actions">
-                    <button class="store-mini-btn edit" onclick="renameStoreFromAdmin(${index})" title="修改門市名稱">✎ 改名</button>
+                    <button class="store-mini-btn edit" onclick="renameStoreFromAdmin(${index})" title="修改門市名稱">✏️</button>
                     <button class="store-mini-btn" ${index === 0 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, -1)" title="上移">↑</button>
                     <button class="store-mini-btn" ${index === storeList.length - 1 ? 'disabled' : ''} onclick="moveStoreFromAdmin(${index}, 1)" title="下移">↓</button>
                     <button class="store-mini-btn delete" onclick="removeStoreFromAdmin(${index})" title="刪除">✕</button>
